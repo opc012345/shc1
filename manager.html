@@ -6,30 +6,33 @@
   <title>도크 입문 관제 시스템 (관리자)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    #authBox { max-width: 300px; margin: 50px auto; text-align: center; }
-    #authBox input { padding: 10px; width: 100%; margin-bottom: 10px; box-sizing: border-box; }
-    #authBox button { padding: 10px; width: 100%; background: #28a745; color: white; border: none; cursor: pointer; }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    #authBox { max-width: 320px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+    #authBox input { padding: 12px; width: 100%; margin-bottom: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    #authBox button { padding: 12px; width: 100%; background: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
     #dashboard { display: none; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-    th { background-color: #f4f4f4; }
-    .btn-complete { background: #dc3545; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 3px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
+    th { background-color: #f8f9fa; color: #333; }
+    .btn-refresh { background: #17a2b8; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-complete { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <!-- 암호 인증 화면 -->
   <div id="authBox">
     <h3>🔒 관리자 인증</h3>
     <input type="password" id="passcode" placeholder="암호 4자리 입력">
     <button onclick="checkAuth()">접속하기</button>
   </div>
 
-  <!-- 메인 관제 화면 -->
-  <div id="dashboard">
-    <h2>📋 도크 입문 현황 관제</h2>
-    <button onclick="loadData()">🔄 새로고침</button>
+  <div id="dashboard" class="container">
+    <div class="header">
+      <h2>📋 도크 입문 현황 관제</h2>
+      <button class="btn-refresh" onclick="loadData()">🔄 새로고침</button>
+    </div>
     <table>
       <thead>
         <tr>
