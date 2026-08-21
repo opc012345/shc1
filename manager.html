@@ -11,7 +11,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; }
     body { background-color: #f4f6f9; color: #333; }
     
-    /* Top Navbar */
     .top-nav { background-color: #0f172a; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
     .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; }
     .brand-logo { background: #e11d48; color: white; border-radius: 50%; padding: 4px 8px; font-size: 12px; font-weight: 900; }
@@ -20,15 +19,12 @@
     .btn-icon { background: #1e293b; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
     .btn-icon:hover { background: #334155; }
 
-    /* Login Modal */
     #authBox { max-width: 360px; margin: 100px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
     #authBox input { padding: 12px; width: 100%; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; text-align: center; }
     #authBox button { padding: 12px; width: 100%; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; }
 
-    /* Dashboard Container */
     #dashboard { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
 
-    /* Metric Cards Grid */
     .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
     .card { background: white; padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
     .card-title { font-size: 13px; color: #64748b; font-weight: 600; margin-bottom: 8px; }
@@ -39,7 +35,6 @@
     .icon-green { background: #f0fdf4; color: #22c55e; }
     .icon-red { background: #fef2f2; color: #ef4444; }
 
-    /* Main Section Panel */
     .panel { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
     .filter-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
     .search-box { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; width: 300px; }
@@ -53,7 +48,6 @@
     .date-input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
     .btn-excel { background: #059669; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
-    /* Table Design */
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { background: #f8fafc; color: #475569; font-size: 13px; font-weight: 700; padding: 14px; border-bottom: 2px solid #e2e8f0; }
     td { padding: 14px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
@@ -70,7 +64,6 @@
 </head>
 <body>
 
-  <!-- Top Header -->
   <div class="top-nav">
     <div class="brand">
       <span class="brand-logo">SHC</span>
@@ -84,17 +77,13 @@
     </div>
   </div>
 
-  <!-- Auth Screen -->
   <div id="authBox">
     <h3>🔒 관제 시스템 비밀번호</h3>
     <input type="password" id="passcode" placeholder="암호 4자리 (1234)">
     <button onclick="checkAuth()">접속하기</button>
   </div>
 
-  <!-- Dashboard Container -->
   <div id="dashboard">
-    
-    <!-- 4 Cards -->
     <div class="metrics-grid">
       <div class="card">
         <div>
@@ -126,7 +115,6 @@
       </div>
     </div>
 
-    <!-- Main Table Panel -->
     <div class="panel">
       <div class="filter-bar">
         <div class="search-box">
@@ -154,12 +142,11 @@
             <th>운전자 성함</th>
             <th>연락처</th>
             <th>상태</th>
-            <th>출차일시</th>
             <th>관리</th>
           </tr>
         </thead>
         <tbody id="listTable">
-          <tr><td colspan="7" style="text-align: center; color: #94a3b8;">데이터를 불러오는 중입니다...</td></tr>
+          <tr><td colspan="6" style="text-align: center; color: #94a3b8;">데이터를 불러오는 중입니다...</td></tr>
         </tbody>
       </table>
     </div>
@@ -176,7 +163,6 @@
     let audioContextAllowed = false;
     let lastRecordCount = 0;
 
-    // 시계 업데이트
     function updateClock() {
       const now = new Date();
       const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -186,7 +172,6 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 오디오 허용
     function enableAudio() {
       audioContextAllowed = true;
       alert("알림 소리가 활성화되었습니다.");
@@ -211,11 +196,8 @@
         document.getElementById('authBox').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         
-        // 날짜 필터를 오늘로 기본 설정
         document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
-        
         loadData();
-        // 5초마다 자동 실시간 갱신
         setInterval(loadData, 5000);
       } else {
         alert('암호가 올바르지 않습니다.');
@@ -238,7 +220,6 @@
         return;
       }
 
-      // 신규 데이터 추가 시 소리 알림
       if (allData.length > 0 && data.length > lastRecordCount) {
         playBeep();
       }
@@ -282,14 +263,13 @@
       tbody.innerHTML = '';
 
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">조회된 데이터가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">조회된 데이터가 없습니다.</td></tr>';
         return;
       }
 
       data.forEach(item => {
         const tr = document.createElement('tr');
         const inTime = new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
-        const outTime = item.updated_at && item.status === '출차완료' ? new Date(item.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
 
         let badgeClass = 'status-wait';
         if (item.status === '출차완료') badgeClass = 'status-done';
@@ -301,7 +281,6 @@
           <td>${item.driver_name}</td>
           <td>${item.phone_number}</td>
           <td><span class="badge-status ${badgeClass}">${item.status}</span></td>
-          <td>${outTime}</td>
           <td>
             ${item.status === '대기중' 
               ? `<button class="btn-action" onclick="completeDock(${item.id})">출차 완료</button>` 
@@ -315,7 +294,7 @@
     async function completeDock(id) {
       const { error } = await _supabase
         .from('dock_control')
-        .update({ status: '출차완료', updated_at: new Date() })
+        .update({ status: '출차완료' })
         .eq('id', id);
 
       if (error) {
