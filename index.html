@@ -2,146 +2,122 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량입문 신청</title>
+  
+  <!-- 카카오톡 / 문자 링크 카드 미리보기 설정 (Open Graph) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="신흥정밀 차량입문 신청">
+  <meta property="og:image" content="https://opc012345.github.io/shc1/favicon.ico">
+  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
-    body { background-color: #f1f5f9; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 16px; }
-    
-    .container { background: #ffffff; width: 100%; max-width: 440px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); padding: 28px 24px; margin-top: 10px; margin-bottom: 20px; }
-    
-    .header-logo { text-align: center; margin-bottom: 12px; }
-    /* 동그란 로고 디자인 수정 영역 */
-    .shc-logo {
+    body { background-color: #f1f5f9; color: #1e293b; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
+
+    .card { background: white; width: 100%; max-width: 420px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); padding: 24px; }
+
+    .brand-header { text-align: center; margin-bottom: 24px; }
+    .brand-logo {
       display: inline-flex;
       justify-content: center;
       align-items: center;
       background: #c81e2b;
       color: white;
       font-weight: 900;
-      font-size: 15px;
+      font-size: 20px;
       font-style: italic;
-      width: 52px;
-      height: 52px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      letter-spacing: -0.5px;
-      box-shadow: 0 2px 6px rgba(200, 30, 43, 0.3);
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 10px rgba(200, 30, 43, 0.3);
     }
-    .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 8px; }
-    .header-sub { font-size: 13px; color: #64748b; text-align: center; line-height: 1.5; margin-bottom: 24px; }
-    .header-sub span { color: #dc2626; font-weight: bold; }
+    .brand-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+    .brand-sub { font-size: 13px; color: #64748b; }
 
-    .form-group { margin-bottom: 16px; }
-    .label-title { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-    .label-title i { color: #dc2626; }
-    .required { color: #dc2626; }
-
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
+    
     .input-wrapper { position: relative; display: flex; align-items: center; }
-    input[type="text"], input[type="tel"] {
-      width: 100%; padding: 14px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; background: #f8fafc; color: #1e293b; outline: none; transition: all 0.2s;
-    }
-    input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
-    .clear-btn { position: absolute; right: 12px; background: #cbd5e1; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+    .input-wrapper i { position: absolute; left: 14px; color: #94a3b8; font-size: 15px; }
+    .form-input { width: 100%; padding: 12px 14px 12px 42px; border: 1.5px solid #cbd5e1; border-radius: 8px; font-size: 15px; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: #0f172a; }
 
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-submit { width: 100%; background: #0f172a; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+    .btn-submit:hover { background: #1e293b; }
 
-    .remember-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 12px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
-    .remember-text { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #334155; }
-    .remember-sub { font-size: 11px; color: #94a3b8; font-weight: normal; margin-top: 2px; }
+    .btn-cancel { width: 100%; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+    .btn-cancel:hover { background: #dc2626; }
 
-    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
-    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background-color: #dc2626; }
-    input:checked + .slider:before { transform: translateX(20px); }
+    /* status view */
+    .status-card { text-align: center; display: none; }
+    .status-icon { width: 64px; height: 64px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; margin: 0 auto 16px auto; }
+    .status-title { font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .status-desc { font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
 
-    .btn-submit { width: 100%; padding: 16px; background-color: #dc2626; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.2s; }
-    .btn-submit:active { transform: scale(0.98); }
-
-    .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
-    .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
-    
-    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
-    .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-    
-    .history-time { font-weight: 600; color: #475569; font-size: 12px; }
-    .history-status { display: flex; align-items: center; gap: 5px; font-weight: 700; }
-    
-    .dot { width: 7px; height: 7px; border-radius: 50%; }
-    .dot-wait { background: #f97316; }
-    .dot-done { background: #22c55e; }
-    .dot-cancel { background: #ef4444; }
-
-    .btn-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
-    .btn-cancel:hover { background: #fca5a5; }
-    .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 15px 0; }
+    .info-list { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; text-align: left; margin-bottom: 20px; }
+    .info-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-label { color: #64748b; }
+    .info-value { font-weight: 700; color: #0f172a; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    
-    <div class="header-logo">
-      <span class="shc-logo">SHC</span>
-    </div>
-    <h1 class="header-title">신흥정밀 차량입문 신청</h1>
-    <p class="header-sub">
-      도착 후 정보를 입력하시면<br>
-      관제 담당자가 확인 후 안내해 드립니다.<br>
-      <span>접수 후 잠시만 대기해 주세요.</span>
-    </p>
+  <div class="card">
+    <!-- 신청 폼 -->
+    <div id="formView">
+      <div class="brand-header">
+        <span class="brand-logo">SHC</span>
+        <div class="brand-title">차량입문 신청</div>
+        <div class="brand-sub">하차 및 출차를 위해 정보를 입력해 주세요.</div>
+      </div>
 
-    <form id="dockForm">
       <div class="form-group">
-        <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
+        <label class="form-label">차량번호</label>
         <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 80가 1234" required>
-          <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
+          <i class="fa-solid fa-truck"></i>
+          <input type="text" id="carNum" class="form-input" placeholder="예: 80가 1234">
         </div>
       </div>
 
-      <div class="row-2">
-        <div class="form-group">
-          <label class="label-title"><i class="fa-solid fa-user"></i> 운전자 성함 <span class="required">*</span></label>
-          <input type="text" id="driverName" placeholder="홍길동" required>
-        </div>
-
-        <div class="form-group">
-          <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+      <div class="form-group">
+        <label class="form-label">운전자 성함</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-user"></i>
+          <input type="text" id="driverName" class="form-input" placeholder="성함을 입력하세요">
         </div>
       </div>
 
-      <div class="remember-box">
-        <div>
-          <div class="remember-text"><i class="fa-solid fa-bookmark" style="color: #f59e0b;"></i> 내 정보 기억하기</div>
-          <div class="remember-sub">다음 방문 시 정보가 자동 입력됩니다.</div>
+      <div class="form-group">
+        <label class="form-label">연락처</label>
+        <div class="input-wrapper">
+          <i class="fa-solid fa-phone"></i>
+          <input type="tel" id="phoneNum" class="form-input" placeholder="010-0000-0000">
         </div>
-        <label class="switch">
-          <input type="checkbox" id="rememberInfo" checked>
-          <span class="slider"></span>
-        </label>
       </div>
 
-      <button type="submit" class="btn-submit">
-        <i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기
-      </button>
-    </form>
-
-    <div class="status-section">
-      <div class="status-header">
-        <span>[입문 상태 현황]</span>
-        <span id="lastCheckTime" style="font-weight: normal; font-size: 11px; color: #94a3b8;">최종 확인: --:--</span>
-      </div>
-
-      <div class="history-list" id="historyList">
-        <div class="empty-msg">최근 30일간의 신청 내역이 없습니다.</div>
-      </div>
+      <button class="btn-submit" onclick="submitForm()">입문 신청하기</button>
     </div>
 
+    <!-- 대기 현황 화면 -->
+    <div id="statusView" class="status-card">
+      <div class="status-icon"><i class="fa-solid fa-clock"></i></div>
+      <div class="status-title">입문 신청이 완료되었습니다</div>
+      <div class="status-desc">담당자가 확인 중입니다.<br>하차가 완료될 때까지 잠시만 대기해 주세요.</div>
+
+      <div class="info-list">
+        <div class="info-row"><span class="info-label">차량번호</span><span class="info-value" id="dispCar"></span></div>
+        <div class="info-row"><span class="info-label">운전자</span><span class="info-value" id="dispName"></span></div>
+        <div class="info-row"><span class="info-label">연락처</span><span class="info-value" id="dispPhone"></span></div>
+        <div class="info-row"><span class="info-label">접수상태</span><span class="info-value" style="color: #c2410c;">대기중</span></div>
+      </div>
+
+      <button class="btn-cancel" onclick="cancelRegistration()">입문 신청 취소</button>
+    </div>
   </div>
 
   <script>
@@ -149,132 +125,80 @@
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let currentId = null;
+
     window.onload = function() {
-      const savedCar = localStorage.getItem('shc_car');
-      const savedName = localStorage.getItem('shc_name');
-      const savedPhone = localStorage.getItem('shc_phone');
-
-      if (savedCar) document.getElementById('carNumber').value = savedCar;
-      if (savedName) document.getElementById('driverName').value = savedName;
-      if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
-
-      cleanOldHistory();
-      loadHistoryStatus();
+      const savedId = localStorage.getItem('shc_dock_id');
+      if (savedId) {
+        currentId = savedId;
+        checkMyStatus();
+      }
     };
 
-    function clearInput(id) {
-      document.getElementById(id).value = '';
-    }
+    async function submitForm() {
+      const car = document.getElementById('carNum').value.trim();
+      const name = document.getElementById('driverName').value.trim();
+      const phone = document.getElementById('phoneNum').value.trim();
 
-    function cleanOldHistory() {
-      let ids = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      ids = ids.filter(item => item.timestamp > thirtyDaysAgo);
-      localStorage.setItem('shc_history_ids', JSON.stringify(ids));
-    }
-
-    document.getElementById('dockForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const carNumber = document.getElementById('carNumber').value.trim();
-      const driverName = document.getElementById('driverName').value.trim();
-      const phoneNumber = document.getElementById('phoneNumber').value.trim();
-      const remember = document.getElementById('rememberInfo').checked;
-
-      if (remember) {
-        localStorage.setItem('shc_car', carNumber);
-        localStorage.setItem('shc_name', driverName);
-        localStorage.setItem('shc_phone', phoneNumber);
-      } else {
-        localStorage.removeItem('shc_car');
-        localStorage.removeItem('shc_name');
-        localStorage.removeItem('shc_phone');
-      }
-
-      const { data, error } = await _supabase
-        .from('dock_control')
-        .insert([{ car_number: carNumber, driver_name: driverName, phone_number: phoneNumber, status: '대기중' }])
-        .select();
-
-      if (error) {
-        alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
-      } else {
-        alert('차량 입문 신청이 정상적으로 접수되었습니다.');
-        if (data && data.length > 0) {
-          let ids = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
-          ids.unshift({ id: data[0].id, timestamp: Date.now() });
-          localStorage.setItem('shc_history_ids', JSON.stringify(ids));
-          loadHistoryStatus();
-        }
-      }
-    });
-
-    async function loadHistoryStatus() {
-      const idsObj = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
-      const container = document.getElementById('historyList');
-
-      const now = new Date();
-      document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-      if (idsObj.length === 0) {
-        container.innerHTML = '<div class="empty-msg">최근 30일간의 신청 내역이 없습니다.</div>';
+      if (!car || !name || !phone) {
+        alert('모든 정보를 입력해 주세요.');
         return;
       }
 
-      const idArray = idsObj.map(item => item.id);
+      const { data, error } = await _supabase
+        .from('dock_control')
+        .insert([{ car_number: car, driver_name: name, phone_number: phone, status: '대기중' }])
+        .select();
+
+      if (error) {
+        alert('신청 실패: ' + error.message);
+      } else if (data && data.length > 0) {
+        currentId = data[0].id;
+        localStorage.setItem('shc_dock_id', currentId);
+        showStatus(data[0]);
+      }
+    }
+
+    async function checkMyStatus() {
+      if (!currentId) return;
+
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
-        .in('id', idArray)
-        .order('created_at', { ascending: false });
+        .eq('id', currentId)
+        .single();
 
-      if (error || !data) return;
-
-      container.innerHTML = '';
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'history-card';
-
-        const dt = new Date(item.created_at);
-        const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-        let dotClass = 'dot-wait';
-        if (item.status === '출차완료') dotClass = 'dot-done';
-        if (item.status === '입문취소') dotClass = 'dot-cancel';
-
-        card.innerHTML = `
-          <div class="history-time">${dateStr}</div>
-          <div class="history-status">
-            <div class="dot ${dotClass}"></div>
-            <span>${item.status}</span>
-          </div>
-          <div>
-            ${item.status === '대기중' 
-              ? `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>` 
-              : `<span style="color:#cbd5e1; font-size:11px;">-</span>`}
-          </div>
-        `;
-        container.appendChild(card);
-      });
+      if (error || !data || data.status === '출차완료' || data.status === '입문취소') {
+        localStorage.removeItem('shc_dock_id');
+        document.getElementById('formView').style.display = 'block';
+        document.getElementById('statusView').style.display = 'none';
+      } else {
+        showStatus(data);
+      }
     }
 
-    async function cancelDock(id) {
-      if (!confirm('신청을 취소하시겠습니까?')) return;
+    function showStatus(item) {
+      document.getElementById('formView').style.display = 'none';
+      document.getElementById('statusView').style.display = 'block';
+      document.getElementById('dispCar').innerText = item.car_number;
+      document.getElementById('dispName').innerText = item.driver_name;
+      document.getElementById('dispPhone').innerText = item.phone_number;
+    }
+
+    async function cancelRegistration() {
+      if (!confirm('정말 신청을 취소하시겠습니까?')) return;
 
       const { error } = await _supabase
         .from('dock_control')
         .update({ status: '입문취소' })
-        .eq('id', id);
+        .eq('id', currentId);
 
-      if (error) {
-        alert('취소 실패: ' + error.message);
-      } else {
+      if (!error) {
+        localStorage.removeItem('shc_dock_id');
         alert('신청이 취소되었습니다.');
-        loadHistoryStatus();
+        location.reload();
       }
     }
-
-    setInterval(loadHistoryStatus, 10000);
   </script>
 </body>
 </html>
