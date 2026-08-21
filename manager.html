@@ -14,7 +14,6 @@
     .top-nav { background-color: #0f172a; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
     .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; }
     
-    /* 동그란 SHC 로고 스타일 */
     .shc-logo {
       display: inline-flex;
       justify-content: center;
@@ -54,7 +53,6 @@
     .btn-icon { background: #1e293b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; display: flex; align-items: center; gap: 6px; }
     .btn-icon:hover { background: #334155; }
 
-    /* 알림 ON 버튼 스타일 */
     .btn-notify-on {
       background: #10b981 !important;
       color: white !important;
@@ -114,8 +112,11 @@
     .status-done { background: #dcfce7; color: #15803d; }
     .status-cancel { background: #fee2e2; color: #b91c1c; }
 
+    .action-cell { display: flex; align-items: center; gap: 6px; }
     .btn-action { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; }
     .btn-action:hover { background: #dc2626; }
+    .btn-delete { background: #64748b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .btn-delete:hover { background: #475569; }
   </style>
 </head>
 <body>
@@ -232,12 +233,10 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 알림 토글 (On/Off)
     function toggleNotifications() {
       const btn = document.getElementById('btnNotify');
 
       if (!isNotificationOn) {
-        // 알림 켜기 시도
         if ("Notification" in window) {
           Notification.requestPermission().then(permission => {
             isNotificationOn = true;
@@ -253,14 +252,12 @@
           btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
         }
       } else {
-        // 알림 끄기
         isNotificationOn = false;
         btn.classList.remove('btn-notify-on');
         btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)`;
       }
     }
 
-    // 비프음 재생
     function playBeep() {
       if (!isNotificationOn) return;
       try {
@@ -274,7 +271,6 @@
       } catch(e){}
     }
 
-    // 윈도우 데스크톱 알림 팝업
     function sendDesktopNotification(latestItem) {
       if (!isNotificationOn) return;
       if ("Notification" in window && Notification.permission === "granted") {
@@ -315,7 +311,6 @@
         return;
       }
 
-      // 신규 데이터 감지 시 알림 실행
       if (lastRecordCount !== -1 && data.length > lastRecordCount) {
         playBeep();
         if (data.length > 0) {
@@ -381,9 +376,12 @@
           <td>${item.phone_number}</td>
           <td><span class="badge-status ${badgeClass}">${item.status}</span></td>
           <td>
-            ${item.status === '대기중' 
-              ? `<button class="btn-action" onclick="completeDock(${item.id})">출차 완료</button>` 
-              : '완료됨'}
+            <div class="action-cell">
+              ${item.status === '대기중' 
+                ? `<button class="btn-action" onclick="completeDock(${item.id})">출차 완료</button>` 
+                : '<span style="color: #94a3b8; font-size: 13px;">완료됨</span>'}
+              <button class="btn-delete" onclick="deleteRecord(${item.id})">삭제</button>
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
@@ -398,6 +396,22 @@
 
       if (error) {
         alert('처리 실패: ' + error.message);
+      } else {
+        loadData();
+      }
+    }
+
+    // 내역 삭제 기능
+    async function deleteRecord(id) {
+      if (!confirm('해당 내역을 완전히 삭제하시겠습니까?')) return;
+
+      const { error } = await _supabase
+        .from('dock_control')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('삭제 실패: ' + error.message);
       } else {
         loadData();
       }
