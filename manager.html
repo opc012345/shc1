@@ -48,10 +48,13 @@
     }
 
     .badge-live { background: #ef4444; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: normal; margin-left: 6px; }
-    .nav-right { display: flex; align-items: center; gap: 15px; font-size: 14px; color: #94a3b8; }
+    .nav-right { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #94a3b8; }
     
     .btn-icon { background: #1e293b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; display: flex; align-items: center; gap: 6px; }
     .btn-icon:hover { background: #334155; }
+
+    .btn-telegram { background: #0088cc; color: white; }
+    .btn-telegram:hover { background: #0077b5; }
 
     .btn-notify-on {
       background: #10b981 !important;
@@ -117,6 +120,18 @@
     .btn-action:hover { background: #dc2626; }
     .btn-delete { background: #64748b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
     .btn-delete:hover { background: #475569; }
+
+    /* Modal Styles */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; width: 100%; max-width: 450px; border-radius: 12px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .modal-title { font-size: 18px; font-weight: bold; color: #0f172a; }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b; }
+    .modal-body label { display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px; }
+    .modal-body input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; margin-bottom: 14px; outline: none; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .btn-modal-save { background: #0088cc; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+    .btn-modal-test { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -129,6 +144,7 @@
     </div>
     <div class="nav-right">
       <span id="currentTime">2026. 00. 00 (월) 00:00:00</span>
+      <button class="btn-icon btn-telegram" onclick="openTelegramModal()"><i class="fa-paper-plane fa-solid"></i> 텔레그램 설정</button>
       <button class="btn-icon" id="btnNotify" onclick="toggleNotifications()"><i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)</button>
       <button class="btn-icon" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i></button>
     </div>
@@ -214,6 +230,32 @@
 
   </div>
 
+  <!-- 텔레그램 설정 모달 -->
+  <div class="modal-overlay" id="telegramModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title"><i class="fa-paper-plane fa-solid" style="color: #0088cc;"></i> 텔레그램 알림 설정</div>
+        <button class="modal-close" onclick="closeTelegramModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>텔레그램 봇 토큰 (Bot Token)</label>
+        <input type="text" id="tgBotToken" placeholder="예: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+        
+        <label>채팅 ID (Chat ID)</label>
+        <input type="text" id="tgChatId" placeholder="예: 123456789">
+        
+        <p style="font-size: 11px; color: #64748b; line-height: 1.4;">
+          * 텔레그램 BotFather에서 생성한 봇 토큰과 본인의 Chat ID를 입력하세요.<br>
+          * 설정 시 신규 차량이 접수될 때마다 텔레그램 메시지가 자동 발송됩니다.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-modal-test" onclick="testTelegramMessage()">테스트 발송</button>
+        <button class="btn-modal-save" onclick="saveTelegramSettings()">저장하기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
@@ -243,7 +285,7 @@
             btn.classList.add('btn-notify-on');
             btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
             if (permission !== "granted") {
-              alert("윈도우 알림 권한이 거부되었지만 소리 알림은 작동합니다.");
+              alert("윈도우 알림 권한이 거부되었지만 소리 및 텔레그램 알림은 작동합니다.");
             }
           });
         } else {
@@ -281,6 +323,80 @@
       }
     }
 
+    /* 텔레그램 메세지 발송 함수 */
+    async function sendTelegramNotification(item) {
+      const token = localStorage.getItem('shc_tg_token');
+      const chatId = localStorage.getItem('shc_tg_chat_id');
+
+      if (!token || !chatId) return;
+
+      const message = `🚛 [신흥정밀] 신규 차량 입문 신청!\n\n` +
+                      `• 차량번호: ${item.car_number}\n` +
+                      `• 운전기사: ${item.driver_name}\n` +
+                      `• 연락처: ${item.phone_number}\n` +
+                      `• 신청시각: ${new Date(item.created_at).toLocaleString()}`;
+
+      try {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: message })
+        });
+      } catch(e) {
+        console.error('텔레그램 발송 실패:', e);
+      }
+    }
+
+    function openTelegramModal() {
+      document.getElementById('tgBotToken').value = localStorage.getItem('shc_tg_token') || '';
+      document.getElementById('tgChatId').value = localStorage.getItem('shc_tg_chat_id') || '';
+      document.getElementById('telegramModal').style.display = 'flex';
+    }
+
+    function closeTelegramModal() {
+      document.getElementById('telegramModal').style.display = 'none';
+    }
+
+    function saveTelegramSettings() {
+      const token = document.getElementById('tgBotToken').value.trim();
+      const chatId = document.getElementById('tgChatId').value.trim();
+
+      localStorage.setItem('shc_tg_token', token);
+      localStorage.setItem('shc_tg_chat_id', chatId);
+
+      alert('텔레그램 설정이 저장되었습니다.');
+      closeTelegramModal();
+    }
+
+    async function testTelegramMessage() {
+      const token = document.getElementById('tgBotToken').value.trim();
+      const chatId = document.getElementById('tgChatId').value.trim();
+
+      if (!token || !chatId) {
+        alert('봇 토큰과 채팅 ID를 모두 입력해 주세요.');
+        return;
+      }
+
+      const text = '🔔 [신흥정밀] 텔레그램 연동 테스트 성공!';
+
+      try {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text: text })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          alert('테스트 메시지가 성공적으로 발송되었습니다!');
+        } else {
+          alert('발송 실패: ' + data.description);
+        }
+      } catch(e) {
+        alert('발송 중 오류가 발생했습니다: ' + e.message);
+      }
+    }
+
     function checkAuth() {
       const pass = document.getElementById('passcode').value;
       if (pass === "1234") {
@@ -315,6 +431,7 @@
         playBeep();
         if (data.length > 0) {
           sendDesktopNotification(data[0]);
+          sendTelegramNotification(data[0]);
         }
       }
       lastRecordCount = data.length;
@@ -401,7 +518,6 @@
       }
     }
 
-    // 내역 삭제 기능
     async function deleteRecord(id) {
       if (!confirm('해당 내역을 완전히 삭제하시겠습니까?')) return;
 
