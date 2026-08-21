@@ -6,30 +6,36 @@
   <title>신흥정밀 도크 입문 신청</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 500px; margin: 0 auto; }
-    div { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 5px; font-weight: bold; }
-    input { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-    button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+    .card { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+    h2 { text-align: center; color: #333; margin-bottom: 25px; font-size: 22px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: bold; margin-bottom: 6px; color: #555; font-size: 14px; }
+    input { width: 100%; padding: 12px; border: 1px solid #cccccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+    input:focus { border-color: #007bff; outline: none; }
+    button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #0056b3; }
   </style>
 </head>
 <body>
-  <h2>🚚 신흥정밀 도크 입문 신청</h2>
-  <form id="dockForm">
-    <div>
-      <label>차량 번호</label>
-      <input type="text" id="carNumber" placeholder="예: 12가 3456" required>
-    </div>
-    <div>
-      <label>운전자 성함</label>
-      <input type="text" id="driverName" placeholder="성함을 입력하세요" required>
-    </div>
-    <div>
-      <label>연락처</label>
-      <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
-    </div>
-    <button type="submit">입문 신청하기</button>
-  </form>
+  <div class="card">
+    <h2>🚚 신흥정밀 도크 입문 신청</h2>
+    <form id="dockForm">
+      <div class="form-group">
+        <label>차량 번호</label>
+        <input type="text" id="carNumber" placeholder="예: 12가 3456" required>
+      </div>
+      <div class="form-group">
+        <label>운전자 성함</label>
+        <input type="text" id="driverName" placeholder="성함을 입력하세요" required>
+      </div>
+      <div class="form-group">
+        <label>연락처</label>
+        <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+      </div>
+      <button type="submit">입문 신청하기</button>
+    </form>
+  </div>
 
   <script>
     const SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
