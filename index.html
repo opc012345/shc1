@@ -2,39 +2,138 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>신흥정밀 도크 입문 신청</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>신흥정밀 차량입문 신청</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
-    .card { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-    h2 { text-align: center; color: #333; margin-bottom: 25px; font-size: 22px; }
-    .form-group { margin-bottom: 18px; }
-    label { display: block; font-weight: bold; margin-bottom: 6px; color: #555; font-size: 14px; }
-    input { width: 100%; padding: 12px; border: 1px solid #cccccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
-    input:focus { border-color: #007bff; outline: none; }
-    button { width: 100%; padding: 14px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    button:hover { background-color: #0056b3; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { background-color: #f1f5f9; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
+    
+    .container { background: #ffffff; width: 100%; max-width: 440px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); padding: 28px 24px; }
+    
+    /* Logo Header */
+    .header-logo { text-align: center; margin-bottom: 12px; }
+    .shc-logo { display: inline-block; background: #dc2626; color: white; font-weight: 900; font-size: 14px; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px; }
+    
+    .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 8px; }
+    .header-sub { font-size: 13px; color: #64748b; text-align: center; line-height: 1.5; margin-bottom: 24px; }
+    .header-sub span { color: #dc2626; font-weight: bold; }
+
+    /* Form Styles */
+    .form-group { margin-bottom: 16px; }
+    .label-title { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .label-title i { color: #dc2626; }
+    .required { color: #dc2626; }
+
+    .input-wrapper { position: relative; display: flex; align-items: center; }
+    input[type="text"], input[type="tel"] {
+      width: 100%; padding: 14px 16px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; background: #f8fafc; color: #1e293b; outline: none; transition: all 0.2s;
+    }
+    input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1); }
+    
+    .clear-btn { position: absolute; right: 12px; background: #cbd5e1; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* Remember Toggle Box */
+    .remember-box { background: #f8fafc; border: 1px solid #f1f5f9; padding: 12px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+    .remember-text { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #334155; }
+    .remember-sub { font-size: 11px; color: #94a3b8; font-weight: normal; margin-top: 2px; }
+
+    /* Custom Toggle Switch */
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #dc2626; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Submit Button */
+    .btn-submit { width: 100%; padding: 16px; background-color: #dc2626; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.2s; }
+    .btn-submit:active { transform: scale(0.98); }
+
+    /* Status Box Footer */
+    .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
+    .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 8px; }
+    .status-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; color: #475569; }
+    .status-card .badge { display: flex; align-items: center; gap: 6px; }
+    .status-card .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+    .status-card.active .dot { background: #22c55e; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>🚚 신흥정밀 도크 입문 신청</h2>
+
+  <div class="container">
+    
+    <!-- Logo & Header -->
+    <div class="header-logo">
+      <span class="shc-logo">SHC</span>
+    </div>
+    <h1 class="header-title">신흥정밀 차량입문 신청</h1>
+    <p class="header-sub">
+      도착 후 정보를 입력하시면<br>
+      관제 담당자가 확인 후 안내해 드립니다.<br>
+      <span>접수 후 잠시만 대기해 주세요.</span>
+    </p>
+
+    <!-- Form -->
     <form id="dockForm">
+      
       <div class="form-group">
-        <label>차량 번호</label>
-        <input type="text" id="carNumber" placeholder="예: 12가 3456" required>
+        <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
+        <div class="input-wrapper">
+          <input type="text" id="carNumber" placeholder="예: 80가 1234" required>
+          <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>운전자 성함</label>
-        <input type="text" id="driverName" placeholder="성함을 입력하세요" required>
+
+      <div class="row-2">
+        <div class="form-group">
+          <label class="label-title"><i class="fa-solid fa-user"></i> 운전자 성함 <span class="required">*</span></label>
+          <input type="text" id="driverName" placeholder="홍길동" required>
+        </div>
+
+        <div class="form-group">
+          <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
+          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+        </div>
       </div>
-      <div class="form-group">
-        <label>연락처</label>
-        <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+
+      <!-- Remember Option -->
+      <div class="remember-box">
+        <div>
+          <div class="remember-text"><i class="fa-solid fa-bookmark" style="color: #f59e0b;"></i> 내 정보 기억하기</div>
+          <div class="remember-sub">다음 방문 시 정보가 자동 입력됩니다.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="rememberInfo" checked>
+          <span class="slider"></span>
+        </label>
       </div>
-      <button type="submit">입문 신청하기</button>
+
+      <!-- Submit Button -->
+      <button type="submit" class="btn-submit">
+        <i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기
+      </button>
+
     </form>
+
+    <!-- Real-time Status Notification Box -->
+    <div class="status-section">
+      <div class="status-header">
+        <span>[내 입문 상태 알림]</span>
+        <span id="lastCheckTime">최종 확인: --:--</span>
+      </div>
+      <div class="status-card" id="statusBox">
+        <div class="badge">
+          <div class="dot" id="statusDot"></div>
+          <span id="statusText">제출 대기 중</span>
+        </div>
+        <span id="statusSub" style="font-weight: normal; font-size: 12px; color: #94a3b8;">정보를 입력해 주세요</span>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -42,23 +141,93 @@
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    let activeRecordId = null;
+
+    // 페이지 로드 시 기억된 데이터 불러오기
+    window.onload = function() {
+      const savedCar = localStorage.getItem('shc_car');
+      const savedName = localStorage.getItem('shc_name');
+      const savedPhone = localStorage.getItem('shc_phone');
+
+      if (savedCar) document.getElementById('carNumber').value = savedCar;
+      if (savedName) document.getElementById('driverName').value = savedName;
+      if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
+    };
+
+    function clearInput(id) {
+      document.getElementById(id).value = '';
+    }
+
+    // 폼 제출
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const carNumber = document.getElementById('carNumber').value;
-      const driverName = document.getElementById('driverName').value;
-      const phoneNumber = document.getElementById('phoneNumber').value;
+
+      const carNumber = document.getElementById('carNumber').value.trim();
+      const driverName = document.getElementById('driverName').value.trim();
+      const phoneNumber = document.getElementById('phoneNumber').value.trim();
+      const remember = document.getElementById('rememberInfo').checked;
+
+      if (remember) {
+        localStorage.setItem('shc_car', carNumber);
+        localStorage.setItem('shc_name', driverName);
+        localStorage.setItem('shc_phone', phoneNumber);
+      } else {
+        localStorage.clear();
+      }
 
       const { data, error } = await _supabase
         .from('dock_control')
-        .insert([{ car_number: carNumber, driver_name: driverName, phone_number: phoneNumber, status: '대기중' }]);
+        .insert([{ 
+          car_number: carNumber, 
+          driver_name: driverName, 
+          phone_number: phoneNumber, 
+          status: '대기중' 
+        }])
+        .select();
 
       if (error) {
-        alert('접수 중 오류가 발생했습니다: ' + error.message);
+        alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
       } else {
-        alert('입문 신청이 정상적으로 접수되었습니다.');
-        document.getElementById('dockForm').reset();
+        alert('차량 입문 신청이 정상적으로 접수되었습니다.\n담당자가 확인 후 안내해 드립니다.');
+        if (data && data.length > 0) {
+          activeRecordId = data[0].id;
+          checkMyStatus();
+        }
       }
     });
+
+    // 실시간 본인 입문 상태 확인
+    async function checkMyStatus() {
+      if (!activeRecordId) return;
+
+      const now = new Date();
+      document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      const { data, error } = await _supabase
+        .from('dock_control')
+        .select('status')
+        .eq('id', activeRecordId)
+        .single();
+
+      if (data) {
+        const statusText = document.getElementById('statusText');
+        const statusSub = document.getElementById('statusSub');
+        const statusDot = document.getElementById('statusDot');
+
+        statusText.innerText = data.status;
+
+        if (data.status === '대기중') {
+          statusDot.style.background = '#f97316';
+          statusSub.innerText = '관제 담당자 확인 중입니다';
+        } else if (data.status === '출차완료') {
+          statusDot.style.background = '#22c55e';
+          statusSub.innerText = '입문 처리가 완료되었습니다';
+        }
+      }
+    }
+
+    // 10초마다 내 상태 자동 조회
+    setInterval(checkMyStatus, 10000);
   </script>
 </body>
 </html>
