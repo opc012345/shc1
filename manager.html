@@ -50,13 +50,32 @@
 
     .badge-live { background: #ef4444; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: normal; margin-left: 6px; }
     .nav-right { display: flex; align-items: center; gap: 15px; font-size: 14px; color: #94a3b8; }
-    .btn-icon { background: #1e293b; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    
+    .btn-icon { background: #1e293b; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-weight: 600; display: flex; align-items: center; gap: 6px; }
     .btn-icon:hover { background: #334155; }
+
+    /* 알림 ON 버튼 스타일 */
+    .btn-notify-on {
+      background: #10b981 !important;
+      color: white !important;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+    .btn-notify-on i {
+      animation: ring 1.5s infinite;
+    }
+    @keyframes ring {
+      0% { transform: rotate(0); }
+      10% { transform: rotate(15deg); }
+      20% { transform: rotate(-10deg); }
+      30% { transform: rotate(10deg); }
+      40% { transform: rotate(-5deg); }
+      50% { transform: rotate(0); }
+      100% { transform: rotate(0); }
+    }
 
     #authBox { max-width: 360px; margin: 100px auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); text-align: center; }
     #authBox input { padding: 12px; width: 100%; margin: 15px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; text-align: center; outline: none; }
     #authBox input:focus { border-color: #0f172a; }
-    /* 접속하기 버튼: 검정 바탕에 흰색 글씨 */
     #authBox button { padding: 12px; width: 100%; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; transition: background 0.2s; }
     #authBox button:hover { background: #1e293b; }
 
@@ -109,7 +128,7 @@
     </div>
     <div class="nav-right">
       <span id="currentTime">2026. 00. 00 (월) 00:00:00</span>
-      <button class="btn-icon" onclick="enableNotifications()"><i class="fa-solid fa-bell"></i> 알림 켜기 (소리/윈도우)</button>
+      <button class="btn-icon" id="btnNotify" onclick="toggleNotifications()"><i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)</button>
       <button class="btn-icon" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i></button>
     </div>
   </div>
@@ -201,7 +220,7 @@
 
     let allData = [];
     let currentStatusFilter = '전체';
-    let audioContextAllowed = false;
+    let isNotificationOn = false;
     let lastRecordCount = -1;
 
     function updateClock() {
@@ -213,25 +232,37 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 소리 및 윈도우 알림 권한 활성화
-    function enableNotifications() {
-      audioContextAllowed = true;
-      if ("Notification" in window) {
-        Notification.requestPermission().then(permission => {
-          if (permission === "granted") {
-            alert("소리 및 윈도우 알림이 활성화되었습니다.");
-          } else {
-            alert("소리는 활성화되었으나, 윈도우 알림 권한이 거부되었습니다.");
-          }
-        });
+    // 알림 토글 (On/Off)
+    function toggleNotifications() {
+      const btn = document.getElementById('btnNotify');
+
+      if (!isNotificationOn) {
+        // 알림 켜기 시도
+        if ("Notification" in window) {
+          Notification.requestPermission().then(permission => {
+            isNotificationOn = true;
+            btn.classList.add('btn-notify-on');
+            btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
+            if (permission !== "granted") {
+              alert("윈도우 알림 권한이 거부되었지만 소리 알림은 작동합니다.");
+            }
+          });
+        } else {
+          isNotificationOn = true;
+          btn.classList.add('btn-notify-on');
+          btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
+        }
       } else {
-        alert("소리 알림이 활성화되었습니다.");
+        // 알림 끄기
+        isNotificationOn = false;
+        btn.classList.remove('btn-notify-on');
+        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)`;
       }
     }
 
     // 비프음 재생
     function playBeep() {
-      if (!audioContextAllowed) return;
+      if (!isNotificationOn) return;
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = ctx.createOscillator();
@@ -245,6 +276,7 @@
 
     // 윈도우 데스크톱 알림 팝업
     function sendDesktopNotification(latestItem) {
+      if (!isNotificationOn) return;
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification("🚛 신규 차량 입문 신청!", {
           body: `차량번호: ${latestItem.car_number}\n운전자: ${latestItem.driver_name} (${latestItem.phone_number})`,
