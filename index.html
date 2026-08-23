@@ -8,7 +8,7 @@
   <!-- 카카오톡 링크 공유(미리보기 카드) 설정 -->
   <meta property="og:type" content="website">
   <meta property="og:title" content="🚛 [신흥정밀] 차량 도착 안내">
-  <meta property="og:description" content="보안실 통과 후 대기장소/상하차장 주차 후 도착 알림을 보내주세요. (약도 포함)">
+  <meta property="og:description" content="보안실 통과 시 내려서 물어보실 필요 없이, 해당 장소 주차 후 도착 알림을 보내주세요. (약도 포함)">
   <meta property="og:image" content="https://opc012345.github.io/shc1/map.png">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -27,10 +27,19 @@
     }
     .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
     
-    .header-guide-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left; }
-    .header-sub-main { font-size: 13.5px; color: #1e293b; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
-    .header-sub-list { font-size: 12.5px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
-    .header-sub-notice { font-size: 11.5px; color: #dc2626; line-height: 1.5; font-weight: 600; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+    /* 안내 박스 스타일 및 정렬 수정 */
+    .header-guide-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: left; }
+    .header-sub-main { font-size: 13px; color: #1e293b; font-weight: 700; margin-bottom: 12px; line-height: 1.55; word-break: keep-all; }
+    
+    .header-sub-list { font-size: 12px; color: #334155; line-height: 1.6; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .list-item { display: flex; align-items: flex-start; gap: 5px; word-break: keep-all; }
+    .list-item span { flex-shrink: 0; }
+
+    /* ※ 빨간 문구 폰트 11px 조율 및 [담당자] 들여쓰기 위치 정렬 */
+    .header-sub-notice { font-size: 11px; color: #dc2626; line-height: 1.5; font-weight: 600; border-top: 1px dashed #cbd5e1; padding-top: 10px; word-break: keep-all; }
+    .notice-item { margin-bottom: 4px; }
+    .notice-item:last-child { margin-bottom: 0; }
+    .indent-text { display: block; margin-left: 12px; } /* ※ 너비만큼 자연스럽게 들여쓰기 */
 
     .accordion-toggle {
       width: 100%; padding: 12px 16px; background-color: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1;
@@ -102,17 +111,32 @@
     <div class="header-logo">
       <span class="shc-logo">SHC</span>
     </div>
-    <h1 class="header-title">신흥정밀 차량 도착 알림</h1>
+    <h1 class="header-title">신흥정밀 차량 도착 안내</h1>
     
+    <!-- 안내 박스 (줄바꿈 및 간격 수정한 영역) -->
     <div class="header-guide-box">
-      <p class="header-sub-main">보안실 통과 시 내려서 물어보실 필요 없이, 아래 링크 접속하여 해당 장소에 주차 후 도착 알림을 보내주세요</p>
+      <p class="header-sub-main">
+        보안실 통과 시 내려서 물어보실 필요 없이,<br>
+        해당 장소에 주차 후 도착 알림을 보내주세요.
+      </p>
+      
       <div class="header-sub-list">
-        <div>🔹 <strong>처음 방문:</strong> 대기장소 주차 후 알림 전송</div>
-        <div>🔹 <strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 알림 전송</div>
+        <div class="list-item">
+          <span>🔹</span>
+          <div><strong>처음 방문:</strong> 대기장소 주차 후 알림 전송</div>
+        </div>
+        <div class="list-item">
+          <span>🔹</span>
+          <div><strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 알림 전송</div>
+        </div>
       </div>
+
       <div class="header-sub-notice">
-        ※ 고정 기사님도 방문 시마다 매번 도착 알림을 전송해 주세요.<br>
-        ※ 알림 전송 후 대기해 주시고, 5분 이상 지연 시 [담당자 연락처]로 연락해 주세요.
+        <div class="notice-item">※ 고정 기사님도 방문 시마다 매번 도착 알림을 전송해 주세요.</div>
+        <div class="notice-item">
+          ※ 알림 전송 후 대기해 주시고, 5분 이상 지연 시<br>
+          <span class="indent-text">[담당자 연락처]로 연락해 주세요.</span>
+        </div>
       </div>
     </div>
 
@@ -174,12 +198,12 @@
 
     <div class="status-section">
       <div class="status-header">
-        <span>[오늘 전체 도착 현황]</span>
+        <span>[나의 오늘 도착 알림 내역]</span>
         <span id="lastCheckTime" style="font-weight: normal; font-size: 11px; color: #94a3b8;">최종 확인: --:--</span>
       </div>
 
       <div class="history-list" id="historyList">
-        <div class="empty-msg">오늘 등록된 도착 현황을 불러오는 중...</div>
+        <div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>
       </div>
     </div>
 
@@ -199,7 +223,7 @@
       if (savedName) document.getElementById('driverName').value = savedName;
       if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
 
-      loadTodayStatus();
+      loadMyStatus();
     };
 
     function toggleAccordion() {
@@ -252,14 +276,22 @@
       } else {
         alert('차량 도착 알림이 정상적으로 전송되었습니다.');
         document.getElementById('carNumber').value = carNumber;
-        loadTodayStatus();
+        loadMyStatus();
       }
     });
 
-    async function loadTodayStatus() {
+    async function loadMyStatus() {
       const container = document.getElementById('historyList');
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+      const savedCar = localStorage.getItem('shc_car');
+      const savedPhone = localStorage.getItem('shc_phone');
+
+      if (!savedCar && !savedPhone) {
+        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
+        return;
+      }
 
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
@@ -268,10 +300,11 @@
         .from('dock_control')
         .select('*')
         .gte('created_at', todayStart.toISOString())
+        .or(`car_number.eq.${savedCar},phone_number.eq.${savedPhone}`)
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-msg">오늘 접수된 도착 알림 내역이 없습니다.</div>';
+        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
       }
 
@@ -353,11 +386,11 @@
         alert('취소 실패: ' + error.message);
       } else {
         alert('알림이 취소되었습니다.');
-        loadTodayStatus();
+        loadMyStatus();
       }
     }
 
-    setInterval(loadTodayStatus, 10000);
+    setInterval(loadMyStatus, 10000);
   </script>
 </body>
 </html>
