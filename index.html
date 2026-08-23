@@ -160,7 +160,7 @@
       <div class="form-group">
         <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 80가 1234" required>
+          <input type="text" id="carNumber" placeholder="예: 80가 1234" required oninput="loadMyStatus()">
           <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
@@ -173,7 +173,7 @@
 
         <div class="form-group">
           <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required oninput="loadMyStatus()">
         </div>
       </div>
 
@@ -211,9 +211,8 @@
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 텔레그램 봇 연동 정보 (원래 발송용 봇/채널 설정)
-    const TELEGRAM_BOT_TOKEN = "7817457788:AAGx0aM13P6yIq3kGkU5H-3Q3g-9LwZfU0o"; // 기존 토큰 복구
-    const TELEGRAM_CHAT_ID = "-100234567890"; // 기존 채널/대화방 ID
+    const TELEGRAM_BOT_TOKEN = "7817457788:AAGx0aM13P6yIq3kGkU5H-3Q3g-9LwZfU0o"; 
+    const TELEGRAM_CHAT_ID = "-100234567890"; 
 
     window.onload = function() {
       const savedCar = localStorage.getItem('shc_car');
@@ -236,9 +235,9 @@
 
     function clearInput(id) {
       document.getElementById(id).value = '';
+      loadMyStatus();
     }
 
-    // 텔레그램 알림 전송 함수 복구
     async function sendTelegramNotification(carNumber, driverName, phoneNumber) {
       const message = `🚛 [차량 도착 알림]\n\n• 차량번호: ${carNumber}\n• 운전자: ${driverName}\n• 연락처: ${phoneNumber}\n• 시간: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
       try {
@@ -263,7 +262,6 @@
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
 
-      // 폼에 입력한 정보를 임시 및 브라우저에 우선 저장
       localStorage.setItem('shc_last_car', carNumber);
       localStorage.setItem('shc_last_phone', phoneNumber);
 
@@ -281,7 +279,6 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
-      // 1. Supabase DB 저장
       const { error } = await _supabase
         .from('dock_control')
         .insert([{ 
@@ -297,24 +294,26 @@
       if (error) {
         alert('도착 알림 전송 중 오류가 발생했습니다: ' + error.message);
       } else {
-        // 2. 텔레그램 담당자 알림 발송
         sendTelegramNotification(carNumber, driverName, phoneNumber);
-
         alert('차량 도착 알림이 정상적으로 전송되었습니다.');
-        loadMyStatus(carNumber, phoneNumber);
+        loadMyStatus();
       }
     });
 
-    async function loadMyStatus(overrideCar, overridePhone) {
+    async function loadMyStatus() {
       const container = document.getElementById('historyList');
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      // 입력란 또는 저장소에서 내 차량 정보 가져오기
-      const car = overrideCar || document.getElementById('carNumber').value.replace(/\s+/g, '').trim() || localStorage.getItem('shc_car') || localStorage.getItem('shc_last_car');
-      const phone = overridePhone || document.getElementById('phoneNumber').value.trim() || localStorage.getItem('shc_phone') || localStorage.getItem('shc_last_phone');
+      // 현재 화면에 입력된 값 기준 (없으면 저장소 값 사용)
+      const inputCar = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
+      const inputPhone = document.getElementById('phoneNumber').value.trim();
 
-      if (!car && !phone) {
+      const car = inputCar || localStorage.getItem('shc_car') || localStorage.getItem('shc_last_car');
+      const phone = inputPhone || localStorage.getItem('shc_phone') || localStorage.getItem('shc_last_phone');
+
+      // 차량번호와 연락처 둘 다 정확히 있어야만 본인 조회를 진행함
+      if (!car || !phone) {
         container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
       }
@@ -322,12 +321,13 @@
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
-      // 내 차량번호 또는 연락처가 일치하는 오늘 내역만 조회
+      // 차량번호 AND 전화번호가 모두 본인 것과 정확히 일치하는 내역만 조회 (타인 내역 차단)
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', todayStart.toISOString())
-        .or(`car_number.eq.${car},phone_number.eq.${phone}`)
+        .eq('car_number', car)
+        .eq('phone_number', phone)
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
