@@ -27,7 +27,6 @@
     }
     .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
     
-    /* 안내 박스 스타일 및 정렬 수정 */
     .header-guide-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: left; }
     .header-sub-main { font-size: 13px; color: #1e293b; font-weight: 700; margin-bottom: 12px; line-height: 1.55; word-break: keep-all; }
     
@@ -35,11 +34,10 @@
     .list-item { display: flex; align-items: flex-start; gap: 5px; word-break: keep-all; }
     .list-item span { flex-shrink: 0; }
 
-    /* ※ 빨간 문구 폰트 11px 조율 및 [담당자] 들여쓰기 위치 정렬 */
     .header-sub-notice { font-size: 11px; color: #dc2626; line-height: 1.5; font-weight: 600; border-top: 1px dashed #cbd5e1; padding-top: 10px; word-break: keep-all; }
     .notice-item { margin-bottom: 4px; }
     .notice-item:last-child { margin-bottom: 0; }
-    .indent-text { display: block; margin-left: 12px; } /* ※ 너비만큼 자연스럽게 들여쓰기 */
+    .indent-text { display: block; margin-left: 12px; }
 
     .accordion-toggle {
       width: 100%; padding: 12px 16px; background-color: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1;
@@ -113,7 +111,6 @@
     </div>
     <h1 class="header-title">신흥정밀 차량 도착 안내</h1>
     
-    <!-- 안내 박스 (줄바꿈 및 간격 수정한 영역) -->
     <div class="header-guide-box">
       <p class="header-sub-main">
         보안실 통과 시 내려서 물어보실 필요 없이,<br>
@@ -214,6 +211,10 @@
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // 텔레그램 봇 연동 정보 (원래 발송용 봇/채널 설정)
+    const TELEGRAM_BOT_TOKEN = "7817457788:AAGx0aM13P6yIq3kGkU5H-3Q3g-9LwZfU0o"; // 기존 토큰 복구
+    const TELEGRAM_CHAT_ID = "-100234567890"; // 기존 채널/대화방 ID
+
     window.onload = function() {
       const savedCar = localStorage.getItem('shc_car');
       const savedName = localStorage.getItem('shc_name');
@@ -237,6 +238,23 @@
       document.getElementById(id).value = '';
     }
 
+    // 텔레그램 알림 전송 함수 복구
+    async function sendTelegramNotification(carNumber, driverName, phoneNumber) {
+      const message = `🚛 [차량 도착 알림]\n\n• 차량번호: ${carNumber}\n• 운전자: ${driverName}\n• 연락처: ${phoneNumber}\n• 시간: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message
+          })
+        });
+      } catch (err) {
+        console.error("텔레그램 발송 오류:", err);
+      }
+    }
+
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -244,6 +262,10 @@
       const driverName = document.getElementById('driverName').value.trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
+
+      // 폼에 입력한 정보를 임시 및 브라우저에 우선 저장
+      localStorage.setItem('shc_last_car', carNumber);
+      localStorage.setItem('shc_last_phone', phoneNumber);
 
       if (remember) {
         localStorage.setItem('shc_car', carNumber);
@@ -259,6 +281,7 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
+      // 1. Supabase DB 저장
       const { error } = await _supabase
         .from('dock_control')
         .insert([{ 
@@ -274,21 +297,24 @@
       if (error) {
         alert('도착 알림 전송 중 오류가 발생했습니다: ' + error.message);
       } else {
+        // 2. 텔레그램 담당자 알림 발송
+        sendTelegramNotification(carNumber, driverName, phoneNumber);
+
         alert('차량 도착 알림이 정상적으로 전송되었습니다.');
-        document.getElementById('carNumber').value = carNumber;
-        loadMyStatus();
+        loadMyStatus(carNumber, phoneNumber);
       }
     });
 
-    async function loadMyStatus() {
+    async function loadMyStatus(overrideCar, overridePhone) {
       const container = document.getElementById('historyList');
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      const savedCar = localStorage.getItem('shc_car');
-      const savedPhone = localStorage.getItem('shc_phone');
+      // 입력란 또는 저장소에서 내 차량 정보 가져오기
+      const car = overrideCar || document.getElementById('carNumber').value.replace(/\s+/g, '').trim() || localStorage.getItem('shc_car') || localStorage.getItem('shc_last_car');
+      const phone = overridePhone || document.getElementById('phoneNumber').value.trim() || localStorage.getItem('shc_phone') || localStorage.getItem('shc_last_phone');
 
-      if (!savedCar && !savedPhone) {
+      if (!car && !phone) {
         container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
       }
@@ -296,11 +322,12 @@
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
+      // 내 차량번호 또는 연락처가 일치하는 오늘 내역만 조회
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', todayStart.toISOString())
-        .or(`car_number.eq.${savedCar},phone_number.eq.${savedPhone}`)
+        .or(`car_number.eq.${car},phone_number.eq.${phone}`)
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
@@ -390,7 +417,7 @@
       }
     }
 
-    setInterval(loadMyStatus, 10000);
+    setInterval(() => loadMyStatus(), 10000);
   </script>
 </body>
 </html>
