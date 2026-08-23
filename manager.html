@@ -131,6 +131,8 @@
     let isSoundOn = true;
     let originalTitle = "차량입문 관제 시스템 - 신흥정밀";
     let titleInterval = null;
+    let audioContextUnlocked = false;
+    let audioObject = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
 
     window.onload = () => {
       document.getElementById('date-filter').valueAsDate = new Date();
@@ -141,19 +143,33 @@
       subscribeRealtime();
     };
 
-    // 알림 및 소리 허용 요청 (버튼 클릭시 실행)
+    // 알림 및 소리 허용 요청 (버튼 클릭시 실행 - 브라우저 차단 해제 포함)
     async function enableNotificationsAndSound() {
+      // 1. 오디오 재생 권한 해제 (무음 재생 테스트)
+      try {
+        audioObject.volume = 0.1;
+        await audioObject.play();
+        audioObject.pause();
+        audioObject.currentTime = 0;
+        audioObject.volume = 1.0;
+        audioContextUnlocked = true;
+      } catch (e) {
+        console.log("오디오 활성화 시도 중:", e);
+      }
+
+      // 2. 윈도우 알림 권한 요청
       if ("Notification" in window) {
         const permission = await Notification.requestPermission();
         checkNotificationStatus();
         if (permission === "granted") {
-          new Notification("알림이 활성화되었습니다", { body: "신규 차량 입문 시 윈도우 알림이 표시됩니다." });
+          const testNoti = new Notification("알림이 활성화되었습니다", { 
+            body: "신규 차량 입문 시 윈도우 알림이 정상 발송됩니다.",
+            icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
+          });
         } else {
-          alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 알림을 허용해주세요.");
+          alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 [알림]을 허용으로 바꿔주세요.");
         }
       }
-      // 오디오 재생 권한 획득 테스트
-      playNotificationSound();
     }
 
     function checkNotificationStatus() {
@@ -207,18 +223,19 @@
       renderData();
     }
 
-    // 실시간 Supabase 채널 개설 및 상태 감시
+    // 실시간 Supabase 채널 개설 및 상태 감시 (안정화)
     function subscribeRealtime() {
       const statusBadge = document.getElementById('realtime-status');
 
       const channel = _supabase
-        .channel('schema-db-changes')
+        .channel('public:dock_control')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'dock_control' },
           (payload) => {
-            console.log('실시간 데이터 변경 감지:', payload);
+            console.log('🔔 실시간 이벤트 수신:', payload);
             
+            // 신규 등록(INSERT) 시 발생
             if (payload.eventType === 'INSERT') {
               const newCar = payload.new;
               playNotificationSound();
@@ -229,6 +246,7 @@
           }
         )
         .subscribe((status) => {
+          console.log("Supabase Realtime Status:", status);
           if (status === 'SUBSCRIBED') {
             statusBadge.innerText = '실시간 연결됨';
             statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 font-medium';
@@ -240,10 +258,12 @@
     }
 
     function playNotificationSound() {
-      if(!isSoundOn) return;
+      if (!isSoundOn) return;
       try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.play().catch(err => console.log("음향 자동재생 미허용:", err));
+        audioObject.currentTime = 0;
+        audioObject.play().catch(err => {
+          console.log("음향 자동재생 미허용 (화면을 클릭해주어야 함):", err);
+        });
       } catch(e){}
     }
 
@@ -255,7 +275,10 @@
           icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
           requireInteraction: true
         };
-        new Notification(title, options);
+        const noti = new Notification(title, options);
+        noti.onclick = () => {
+          window.focus();
+        };
       }
     }
 
