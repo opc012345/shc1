@@ -77,11 +77,12 @@
     .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
     
-    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
-    .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     
-    .history-car-tag { font-weight: bold; color: #0f172a; margin-bottom: 2px; }
-    .history-time { font-weight: 500; color: #64748b; font-size: 11px; }
+    .history-car-tag { font-weight: bold; color: #0f172a; font-size: 14px; margin-bottom: 2px; }
+    .history-user-info { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+    .history-time { font-weight: 500; color: #94a3b8; font-size: 10.5px; }
     .history-status { display: flex; align-items: center; gap: 5px; font-weight: 700; }
     
     .dot { width: 7px; height: 7px; border-radius: 50%; }
@@ -89,7 +90,7 @@
     .dot-done { background: #22c55e; }
     .dot-cancel { background: #ef4444; }
 
-    .btn-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .btn-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
     .btn-cancel:hover { background: #fca5a5; }
     .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 15px 0; }
   </style>
@@ -216,7 +217,6 @@
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // 공백 제거 표준화
       const carNumber = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const driverName = document.getElementById('driverName').value.trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
@@ -252,9 +252,8 @@
       }
     });
 
-    // 서버(Supabase) 실시간 조회 - 차량번호 기준 적용
+    // 서버(Supabase) 실시간 조회 (마스킹 적용 + 최신 1건)
     async function loadHistoryStatus() {
-      // 띄어쓰기 유무로 인한 차이를 없애기 위해 공백 제거
       const rawCarNum = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const container = document.getElementById('historyList');
@@ -269,14 +268,14 @@
 
       let query = _supabase.from('dock_control').select('*');
 
-      // [핵심 로직] 차량번호 입력이 있으면 차량번호 기준으로만 조회 (차량 교체 시 꼬임 방지)
       if (rawCarNum) {
         query = query.eq('car_number', rawCarNum);
       } else {
         query = query.eq('phone_number', phoneNumber);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
+      // 최신 1건만 조회
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
 
       if (error || !data || data.length === 0) {
         container.innerHTML = '<div class="empty-msg">최근 입문 신청 내역이 없습니다.</div>';
@@ -284,34 +283,59 @@
       }
 
       container.innerHTML = '';
-      data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'history-card';
+      const item = data[0];
 
-        const dt = new Date(item.created_at);
-        const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      const dt = new Date(item.created_at);
+      const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-        let dotClass = 'dot-wait';
-        if (item.status === '출차완료') dotClass = 'dot-done';
-        if (item.status === '입문취소') dotClass = 'dot-cancel';
+      let dotClass = 'dot-wait';
+      if (item.status === '출차완료') dotClass = 'dot-done';
+      if (item.status === '입문취소') dotClass = 'dot-cancel';
 
-        card.innerHTML = `
-          <div>
-            <div class="history-car-tag">${item.car_number}</div>
-            <div class="history-time">${dateStr}</div>
-          </div>
-          <div class="history-status">
-            <div class="dot ${dotClass}"></div>
-            <span>${item.status}</span>
-          </div>
-          <div>
-            ${item.status === '대기중' 
-              ? `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>` 
-              : `<span style="color:#cbd5e1; font-size:11px;">-</span>`}
-          </div>
-        `;
-        container.appendChild(card);
-      });
+      // 마스킹 처리 함수 적용 (조성민 -> 조*민 / 01012345678 -> 010-****-5678)
+      const maskedName = maskName(item.driver_name);
+      const maskedPhone = maskPhone(item.phone_number);
+
+      const card = document.createElement('div');
+      card.className = 'history-card';
+      card.innerHTML = `
+        <div>
+          <div class="history-car-tag">${item.car_number}</div>
+          <div class="history-user-info">${maskedName} | ${maskedPhone}</div>
+          <div class="history-time">${dateStr}</div>
+        </div>
+        <div class="history-status">
+          <div class="dot ${dotClass}"></div>
+          <span>${item.status}</span>
+        </div>
+        <div>
+          ${item.status === '대기중' 
+            ? `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>` 
+            : `<span style="color:#cbd5e1; font-size:11px;">-</span>`}
+        </div>
+      `;
+      container.appendChild(card);
+    }
+
+    // 이름 마스킹 (예: 조성민 -> 조*민)
+    function maskName(name) {
+      if (!name) return '-';
+      if (name.length <= 2) return name.substring(0, 1) + '*';
+      return name.substring(0, 1) + '*'.repeat(name.length - 2) + name.substring(name.length - 1);
+    }
+
+    // 전화번호 마스킹 (예: 010-1234-5678 -> 010-****-5678, 1111 -> ***1)
+    function maskPhone(phone) {
+      if (!phone) return '-';
+      const clean = phone.replace(/[^0-9]/g, '');
+      if (clean.length === 11) {
+        return clean.replace(/(\d{3})\d{4}(\d{4})/, '$1-****-$2');
+      } else if (clean.length === 10) {
+        return clean.replace(/(\d{3})\d{3}(\d{4})/, '$1-***-$2');
+      } else if (clean.length > 2) {
+        return '*'.repeat(clean.length - 2) + clean.slice(-2);
+      }
+      return phone;
     }
 
     async function cancelDock(id) {
@@ -330,7 +354,6 @@
       }
     }
 
-    // 10초마다 상태 실시간 동기화 (카톡/문자/브라우저 구분 없이 동일)
     setInterval(loadHistoryStatus, 10000);
   </script>
 </body>
