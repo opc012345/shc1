@@ -303,9 +303,6 @@
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
 
-      localStorage.setItem('shc_last_car', carNumber);
-      localStorage.setItem('shc_last_phone', phoneNumber);
-
       if (remember) {
         localStorage.setItem('shc_car', carNumber);
         localStorage.setItem('shc_name', driverName);
@@ -346,13 +343,12 @@
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+      // 1. 현재 화면 입력창의 값만 실시간 취득 (공백 제거)
       const inputCar = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const inputPhone = document.getElementById('phoneNumber').value.trim();
 
-      const car = inputCar || localStorage.getItem('shc_car') || localStorage.getItem('shc_last_car');
-      const phone = inputPhone || localStorage.getItem('shc_phone') || localStorage.getItem('shc_last_phone');
-
-      if (!car || !phone) {
+      // 2. 차량번호와 연락처 두 가지가 모두 입력되지 않았다면 조회하지 않고 비움
+      if (!inputCar || !inputPhone) {
         container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
       }
@@ -360,12 +356,13 @@
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
+      // 3. 정확히 두 값이 모두 일치(AND)할 때만 Supabase DB 조회
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', todayStart.toISOString())
-        .eq('car_number', car)
-        .eq('phone_number', phone)
+        .eq('car_number', inputCar)
+        .eq('phone_number', inputPhone)
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
