@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🚛 [신흥정밀] 차량 입문 안내</title>
+  <title>🚛 [신흥정밀] 차량 도착 안내</title>
 
   <!-- 카카오톡 링크 공유(미리보기 카드) 설정 -->
   <meta property="og:type" content="website">
-  <meta property="og:title" content="🚛 [신흥정밀] 차량 입문 안내">
-  <meta property="og:description" content="보안실 통과 후 대기장소/상하차장 주차 후 입문 신청해 주세요. (약도 포함)">
+  <meta property="og:title" content="🚛 [신흥정밀] 차량 도착 안내">
+  <meta property="og:description" content="보안실 통과 후 대기장소/상하차장 주차 후 도착 알림을 보내주세요. (약도 포함)">
   <meta property="og:image" content="https://opc012345.github.io/shc1/map.png">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -77,10 +77,10 @@
     .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
     
-    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
     .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     
-    .history-car-tag { font-weight: bold; color: #0f172a; font-size: 14px; margin-bottom: 2px; }
+    .history-car-tag { font-weight: bold; color: #0f172a; font-size: 13.5px; margin-bottom: 2px; }
     .history-user-info { font-size: 11px; color: #64748b; margin-bottom: 2px; }
     .history-time { font-weight: 500; color: #94a3b8; font-size: 10.5px; }
     .history-status { display: flex; align-items: center; gap: 5px; font-weight: 700; }
@@ -102,17 +102,17 @@
     <div class="header-logo">
       <span class="shc-logo">SHC</span>
     </div>
-    <h1 class="header-title">신흥정밀 차량입문 신청</h1>
+    <h1 class="header-title">신흥정밀 차량 도착 알림</h1>
     
     <div class="header-guide-box">
       <p class="header-sub-main">보안실 통과 후 아래 안내에 따라 주차해 주세요.</p>
       <div class="header-sub-list">
-        <div>🔹 <strong>처음 방문:</strong> 대기장소 주차 후 신청</div>
-        <div>🔹 <strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 신청</div>
+        <div>🔹 <strong>처음 방문:</strong> 대기장소 주차 후 알림 전송</div>
+        <div>🔹 <strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 알림 전송</div>
       </div>
       <div class="header-sub-notice">
-        ※ 고정 기사님도 방문 시마다 매번 입문 신청을 제출해 주세요.<br>
-        ※ 신청 후 대기해 주시고, 5분 이상 지연 시 [담당자 연락처]로 연락해 주세요.
+        ※ 고정 기사님도 방문 시마다 매번 도착 알림을 전송해 주세요.<br>
+        ※ 알림 전송 후 대기해 주시고, 5분 이상 지연 시 [담당자 연락처]로 연락해 주세요.
       </div>
     </div>
 
@@ -139,7 +139,7 @@
       <div class="form-group">
         <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 80가 1234" oninput="loadHistoryStatus()" required>
+          <input type="text" id="carNumber" placeholder="예: 80가 1234" required>
           <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
@@ -152,7 +152,7 @@
 
         <div class="form-group">
           <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" oninput="loadHistoryStatus()" required>
+          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
         </div>
       </div>
 
@@ -168,18 +168,18 @@
       </div>
 
       <button type="submit" class="btn-submit" id="btnSubmit">
-        <i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기
+        <i class="fa-solid fa-paper-plane"></i> 차량 도착 알림 보내기
       </button>
     </form>
 
     <div class="status-section">
       <div class="status-header">
-        <span>[입문 상태 현황]</span>
+        <span>[오늘 전체 도착 현황]</span>
         <span id="lastCheckTime" style="font-weight: normal; font-size: 11px; color: #94a3b8;">최종 확인: --:--</span>
       </div>
 
       <div class="history-list" id="historyList">
-        <div class="empty-msg">차량번호 입력 시 해당 차량의 내역을 조회합니다.</div>
+        <div class="empty-msg">오늘 등록된 도착 현황을 불러오는 중...</div>
       </div>
     </div>
 
@@ -191,11 +191,6 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     window.onload = function() {
-      // 기기 고유 ID 부여
-      if (!localStorage.getItem('shc_device_uuid')) {
-        localStorage.setItem('shc_device_uuid', 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
-      }
-
       const savedCar = localStorage.getItem('shc_car');
       const savedName = localStorage.getItem('shc_name');
       const savedPhone = localStorage.getItem('shc_phone');
@@ -204,7 +199,7 @@
       if (savedName) document.getElementById('driverName').value = savedName;
       if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
 
-      loadHistoryStatus();
+      loadTodayStatus();
     };
 
     function toggleAccordion() {
@@ -216,41 +211,6 @@
 
     function clearInput(id) {
       document.getElementById(id).value = '';
-      loadHistoryStatus();
-    }
-
-    function getMySubmissionIds() {
-      const storedData = localStorage.getItem('shc_my_submissions');
-      if (!storedData) return [];
-      
-      try {
-        const parsed = JSON.parse(storedData);
-        if (!Array.isArray(parsed)) return [];
-
-        const thirtyDaysAgo = new Date().getTime() - (30 * 24 * 60 * 60 * 1000);
-        const validItems = parsed.filter(item => item.time > thirtyDaysAgo);
-        
-        localStorage.setItem('shc_my_submissions', JSON.stringify(validItems));
-        return validItems.map(item => item.id);
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function saveMySubmissionId(id) {
-      const storedData = localStorage.getItem('shc_my_submissions');
-      let list = [];
-      try {
-        list = storedData ? JSON.parse(storedData) : [];
-      } catch(e) {
-        list = [];
-      }
-
-      const thirtyDaysAgo = new Date().getTime() - (30 * 24 * 60 * 60 * 1000);
-      list = list.filter(item => item.time > thirtyDaysAgo);
-      list.push({ id: id, time: new Date().getTime() });
-      
-      localStorage.setItem('shc_my_submissions', JSON.stringify(list));
     }
 
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
@@ -260,7 +220,6 @@
       const driverName = document.getElementById('driverName').value.trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
-      const deviceUuid = localStorage.getItem('shc_device_uuid');
 
       if (remember) {
         localStorage.setItem('shc_car', carNumber);
@@ -274,73 +233,53 @@
 
       const btn = document.getElementById('btnSubmit');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 접수 중...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
-      const { data, error } = await _supabase
+      const { error } = await _supabase
         .from('dock_control')
         .insert([{ 
           car_number: carNumber, 
           driver_name: driverName, 
           phone_number: phoneNumber, 
-          status: '대기중',
-          device_uuid: deviceUuid 
-        }])
-        .select();
+          status: '대기중'
+        }]);
 
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기';
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 도착 알림 보내기';
 
       if (error) {
-        alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
+        alert('도착 알림 전송 중 오류가 발생했습니다: ' + error.message);
       } else {
-        if (data && data[0]) {
-          saveMySubmissionId(data[0].id);
-        }
-        alert('차량 입문 신청이 정상적으로 접수되었습니다.');
-        loadHistoryStatus();
+        alert('차량 도착 알림이 정상적으로 전송되었습니다.');
+        document.getElementById('carNumber').value = carNumber;
+        loadTodayStatus();
       }
     });
 
-    async function loadHistoryStatus() {
-      const rawCarNum = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
-      const phoneNumber = document.getElementById('phoneNumber').value.trim();
+    async function loadTodayStatus() {
       const container = document.getElementById('historyList');
-
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      if (!rawCarNum && !phoneNumber) {
-        container.innerHTML = '<div class="empty-msg">차량번호 입력 시 해당 차량의 내역을 조회합니다.</div>';
-        return;
-      }
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
 
-      const thirtyDaysAgoDate = new Date();
-      thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
-
-      let query = _supabase.from('dock_control').select('*');
-
-      if (rawCarNum) {
-        query = query.eq('car_number', rawCarNum);
-      } else {
-        query = query.eq('phone_number', phoneNumber);
-      }
-
-      query = query.gte('created_at', thirtyDaysAgoDate.toISOString());
-
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await _supabase
+        .from('dock_control')
+        .select('*')
+        .gte('created_at', todayStart.toISOString())
+        .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-msg">최근 30일 이내 입문 신청 내역이 없습니다.</div>';
+        container.innerHTML = '<div class="empty-msg">오늘 접수된 도착 알림 내역이 없습니다.</div>';
         return;
       }
 
       container.innerHTML = '';
-      const myIds = getMySubmissionIds();
-      const currentDeviceUuid = localStorage.getItem('shc_device_uuid');
 
       data.forEach(item => {
         const dt = new Date(item.created_at);
-        const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
         let dotClass = 'dot-wait';
         if (item.status === '출차완료') dotClass = 'dot-done';
@@ -349,15 +288,9 @@
         const maskedName = maskName(item.driver_name);
         const maskedPhone = maskPhone(item.phone_number);
 
-        const isMySubmission = myIds.includes(item.id) || (item.device_uuid && item.device_uuid === currentDeviceUuid);
-
         let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
         if (item.status === '대기중') {
-          if (isMySubmission) {
-            actionHtml = `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>`;
-          } else {
-            actionHtml = `<span style="color:#94a3b8; font-size:11px;">접수됨</span>`;
-          }
+          actionHtml = `<button class="btn-cancel" onclick="requestCancel(${item.id}, '${item.phone_number}')">취소</button>`;
         }
 
         const card = document.createElement('div');
@@ -366,14 +299,14 @@
           <div>
             <div class="history-car-tag">${item.car_number}</div>
             <div class="history-user-info">${maskedName} | ${maskedPhone}</div>
-            <div class="history-time">${dateStr}</div>
+            <div class="history-time">${timeStr} 알림</div>
           </div>
-          <div class="history-status">
-            <div class="dot ${dotClass}"></div>
-            <span>${item.status}</span>
-          </div>
-          <div>
-            ${actionHtml}
+          <div class="history-status" style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <div class="dot ${dotClass}"></div>
+              <span>${item.status}</span>
+            </div>
+            <div>${actionHtml}</div>
           </div>
         `;
         container.appendChild(card);
@@ -390,24 +323,26 @@
       if (!phone) return '-';
       const clean = phone.replace(/[^0-9]/g, '');
       if (clean.length === 11) {
-        return clean.replace(/(\d{3})\d{4}(\d{4})/, '$1-****-$2');
+        return clean.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-****');
       } else if (clean.length === 10) {
-        return clean.replace(/(\d{3})\d{3}(\d{4})/, '$1-***-$2');
-      } else if (clean.length > 2) {
-        return '*'.repeat(clean.length - 2) + clean.slice(-2);
+        return clean.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-****');
       }
-      return phone;
+      return phone.substring(0, 7) + '-****';
     }
 
-    async function cancelDock(id) {
-      const myIds = getMySubmissionIds();
-      
-      if (!myIds.includes(id)) {
-        alert('본인 스마트폰(또는 PC)에서 접수한 내역만 취소할 수 있습니다.');
+    async function requestCancel(id, originalPhone) {
+      const inputVal = prompt('알림을 취소하려면 등록하셨던 [연락처 뒤 4자리]를 입력해 주세요.');
+      if (!inputVal) return;
+
+      const cleanOriginal = originalPhone.replace(/[^0-9]/g, '');
+      const backendLast4 = cleanOriginal.slice(-4);
+
+      if (inputVal.trim() !== backendLast4) {
+        alert('연락처 뒤 4자리가 일치하지 않습니다. 본인만 취소할 수 있습니다.');
         return;
       }
 
-      if (!confirm('신청을 취소하시겠습니까?')) return;
+      if (!confirm('정말 도착 알림을 취소하시겠습니까?')) return;
 
       const { error } = await _supabase
         .from('dock_control')
@@ -417,12 +352,12 @@
       if (error) {
         alert('취소 실패: ' + error.message);
       } else {
-        alert('신청이 취소되었습니다.');
-        loadHistoryStatus();
+        alert('알림이 취소되었습니다.');
+        loadTodayStatus();
       }
     }
 
-    setInterval(loadHistoryStatus, 10000);
+    setInterval(loadTodayStatus, 10000);
   </script>
 </body>
 </html>
