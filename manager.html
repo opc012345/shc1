@@ -18,13 +18,17 @@
       <h1 class="text-xl font-bold tracking-tight">차량입문 관제 시스템</h1>
       <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 font-medium">실시간</span>
     </div>
-    <div class="flex items-center gap-4 text-sm">
+    <div class="flex items-center gap-3 sm:gap-4 text-sm">
       <div id="current-time" class="text-slate-400 font-mono hidden sm:block"></div>
       <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-2">
         <i class="fa-solid fa-bell"></i> <span id="sound-status-text">알림 켜짐 (On)</span>
       </button>
       <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="새로고침">
         <i class="fa-solid fa-rotate-right"></i>
+      </button>
+      <!-- 로그아웃 버튼 추가 -->
+      <button onclick="handleLogout()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 text-xs sm:text-sm">
+        <i class="fa-solid fa-right-from-bracket"></i> 로그아웃
       </button>
     </div>
   </nav>
@@ -131,6 +135,21 @@
       subscribeRealtime();
     };
 
+    // 로그아웃 처리 함수
+    async function handleLogout() {
+      if (confirm('로그아웃 하시겠습니까?')) {
+        try {
+          await _supabase.auth.signOut();
+        } catch (e) {
+          console.error("Auth signOut Error:", e);
+        }
+        // 세션/로컬스토리지 정리 후 로그인 페이지로 이동 (필요 시 경로 변경)
+        sessionStorage.clear();
+        localStorage.clear();
+        window.location.href = 'index.html'; // 또는 로그인 페이지 경로
+      }
+    }
+
     // 데스크톱 알림 권한 요청
     function requestNotificationPermission() {
       if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
@@ -213,7 +232,7 @@
         const options = {
           body: `운전자: ${carData.driver_name || '미기재'} | 연락처: ${carData.phone_number || '미기재'}`,
           icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
-          requireInteraction: true // 사용자가 클릭하거나 닫을 때까지 우측 하단 알림 유지
+          requireInteraction: true
         };
         new Notification(title, options);
       }
