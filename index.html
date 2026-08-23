@@ -80,7 +80,8 @@
     .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
     .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     
-    .history-time { font-weight: 600; color: #475569; font-size: 12px; }
+    .history-car-tag { font-weight: bold; color: #0f172a; margin-bottom: 2px; }
+    .history-time { font-weight: 500; color: #64748b; font-size: 11px; }
     .history-status { display: flex; align-items: center; gap: 5px; font-weight: 700; }
     
     .dot { width: 7px; height: 7px; border-radius: 50%; }
@@ -165,7 +166,7 @@
         </label>
       </div>
 
-      <button type="submit" class="btn-submit">
+      <button type="submit" class="btn-submit" id="btnSubmit">
         <i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기
       </button>
     </form>
@@ -177,7 +178,7 @@
       </div>
 
       <div class="history-list" id="historyList">
-        <div class="empty-msg">차량번호 또는 연락처 입력 시 내역을 조회합니다.</div>
+        <div class="empty-msg">차량번호 입력 시 해당 차량의 내역을 조회합니다.</div>
       </div>
     </div>
 
@@ -215,7 +216,8 @@
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const carNumber = document.getElementById('carNumber').value.trim();
+      // 공백 제거 표준화
+      const carNumber = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const driverName = document.getElementById('driverName').value.trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
@@ -230,10 +232,17 @@
         localStorage.removeItem('shc_phone');
       }
 
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 접수 중...';
+
       const { data, error } = await _supabase
         .from('dock_control')
         .insert([{ car_number: carNumber, driver_name: driverName, phone_number: phoneNumber, status: '대기중' }])
         .select();
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 입문 제출하기';
 
       if (error) {
         alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
@@ -243,31 +252,31 @@
       }
     });
 
-    // 서버(Supabase) 직접 실시간 조회 함수
+    // 서버(Supabase) 실시간 조회 - 차량번호 기준 적용
     async function loadHistoryStatus() {
-      const carNumber = document.getElementById('carNumber').value.trim();
+      // 띄어쓰기 유무로 인한 차이를 없애기 위해 공백 제거
+      const rawCarNum = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const container = document.getElementById('historyList');
 
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      if (!carNumber && !phoneNumber) {
-        container.innerHTML = '<div class="empty-msg">차량번호 또는 연락처 입력 시 내역을 조회합니다.</div>';
+      if (!rawCarNum && !phoneNumber) {
+        container.innerHTML = '<div class="empty-msg">차량번호 입력 시 해당 차량의 내역을 조회합니다.</div>';
         return;
       }
 
       let query = _supabase.from('dock_control').select('*');
 
-      if (carNumber && phoneNumber) {
-        query = query.or(`car_number.eq.${carNumber},phone_number.eq.${phoneNumber}`);
-      } else if (carNumber) {
-        query = query.eq('car_number', carNumber);
+      // [핵심 로직] 차량번호 입력이 있으면 차량번호 기준으로만 조회 (차량 교체 시 꼬임 방지)
+      if (rawCarNum) {
+        query = query.eq('car_number', rawCarNum);
       } else {
         query = query.eq('phone_number', phoneNumber);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(10);
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(5);
 
       if (error || !data || data.length === 0) {
         container.innerHTML = '<div class="empty-msg">최근 입문 신청 내역이 없습니다.</div>';
@@ -287,7 +296,10 @@
         if (item.status === '입문취소') dotClass = 'dot-cancel';
 
         card.innerHTML = `
-          <div class="history-time">${dateStr}</div>
+          <div>
+            <div class="history-car-tag">${item.car_number}</div>
+            <div class="history-time">${dateStr}</div>
+          </div>
           <div class="history-status">
             <div class="dot ${dotClass}"></div>
             <span>${item.status}</span>
@@ -318,6 +330,7 @@
       }
     }
 
+    // 10초마다 상태 실시간 동기화 (카톡/문자/브라우저 구분 없이 동일)
     setInterval(loadHistoryStatus, 10000);
   </script>
 </body>
