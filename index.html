@@ -27,7 +27,6 @@
     }
     .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
     
-    /* 안내 박스 스타일 (폰트 사이즈 조정으로 1줄 유지) */
     .header-guide-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; text-align: left; word-break: keep-all; }
     .header-sub-main { font-size: 13.5px; color: #1e293b; font-weight: 700; margin-bottom: 10px; line-height: 1.5; }
     
@@ -183,12 +182,12 @@
 
     <div class="status-section">
       <div class="status-header">
-        <span>[오늘 전체 도착 현황]</span>
+        <span>[나의 오늘 도착 알림 내역]</span>
         <span id="lastCheckTime" style="font-weight: normal; font-size: 11px; color: #94a3b8;">최종 확인: --:--</span>
       </div>
 
       <div class="history-list" id="historyList">
-        <div class="empty-msg">오늘 접수된 도착 알림 내역이 없습니다.</div>
+        <div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>
       </div>
     </div>
 
@@ -208,7 +207,7 @@
       if (savedName) document.getElementById('driverName').value = savedName;
       if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
 
-      loadTodayStatus();
+      loadMyStatus();
     };
 
     function toggleAccordion() {
@@ -261,26 +260,36 @@
       } else {
         alert('차량 도착 알림이 정상적으로 전송되었습니다.');
         document.getElementById('carNumber').value = carNumber;
-        loadTodayStatus();
+        loadMyStatus();
       }
     });
 
-    async function loadTodayStatus() {
+    async function loadMyStatus() {
       const container = document.getElementById('historyList');
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
+      const savedCar = localStorage.getItem('shc_car');
+      const savedPhone = localStorage.getItem('shc_phone');
+
+      if (!savedCar && !savedPhone) {
+        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
+        return;
+      }
+
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
+      // 내 차량번호 또는 연락처가 일치하는 오늘 내역만 조회
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', todayStart.toISOString())
+        .or(`car_number.eq.${savedCar},phone_number.eq.${savedPhone}`)
         .order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-msg">오늘 접수된 도착 알림 내역이 없습니다.</div>';
+        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
       }
 
@@ -362,11 +371,11 @@
         alert('취소 실패: ' + error.message);
       } else {
         alert('알림이 취소되었습니다.');
-        loadTodayStatus();
+        loadMyStatus();
       }
     }
 
-    setInterval(loadTodayStatus, 10000);
+    setInterval(loadMyStatus, 10000);
   </script>
 </body>
 </html>
