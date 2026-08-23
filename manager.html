@@ -6,6 +6,7 @@
   <title>차량입문 관제 시스템 - 신흥정밀</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
@@ -31,7 +32,7 @@
   <!-- 메인 컨텐츠 영역 -->
   <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
-    <!-- 현황 요약 카드는 생략 없이 기존 스타일 유지 -->
+    <!-- 현황 요약 카드 -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
         <div>
@@ -63,7 +64,7 @@
       </div>
     </div>
 
-    <!-- 검색 및 필터 컨트롤 -->
+    <!-- 검색, 필터 및 엑셀 다운로드 -->
     <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-4 justify-between items-center">
       <div class="relative w-full sm:w-80">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -76,6 +77,9 @@
           <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
         </div>
         <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none">
+        <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
+        </button>
       </div>
     </div>
 
@@ -106,16 +110,16 @@
 
   <!-- 자바스크립트 스크립트 -->
   <script>
-    // Supabase 설정
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // 기존 본인 key 설정 사용
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhsaGptbnNncWh5c3ZpbGx0ZnBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMjI5NzgsImV4cCI6MjA1NTg5ODk3OH0.52O_4k1S39_Qj-LpL5dG8Z2O9b-7Z9b7Z9b7Z9b7Z9b'; 
+    
+    // Supabase 클라이언트 초기화
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let allRecords = [];
     let currentStatusFilter = 'ALL';
     let isSoundOn = true;
 
-    // 페이지 로드 초기화
     window.onload = () => {
       document.getElementById('date-filter').valueAsDate = new Date();
       updateClock();
@@ -142,7 +146,6 @@
       }
     }
 
-    // 데이터 조회
     async function fetchData() {
       const selectedDate = document.getElementById('date-filter').value;
       const start = `${selectedDate}T00:00:00`;
@@ -157,6 +160,7 @@
 
       if (error) {
         console.error('Fetch error:', error);
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-500 font-medium">데이터 불러오기 실패: ${error.message}</td></tr>`;
         return;
       }
 
@@ -164,7 +168,6 @@
       renderData();
     }
 
-    // 실시간 구독 (새 데이터 입력 시 자동 갱신)
     function subscribeRealtime() {
       _supabase
         .channel('public:dock_control')
@@ -183,7 +186,6 @@
         .subscribe();
     }
 
-    // 데이터 화면 출력
     function renderData() {
       const tbody = document.getElementById('table-body');
       const query = document.getElementById('search-input').value.toLowerCase();
@@ -196,7 +198,6 @@
         return matchesStatus && matchesSearch;
       });
 
-      // 통계 계산
       document.getElementById('stat-total').innerText = allRecords.length;
       document.getElementById('stat-waiting').innerText = allRecords.filter(i => i.status === '대기중' || !i.status).length;
       document.getElementById('stat-completed').innerText = allRecords.filter(i => i.status === '출차완료').length;
@@ -233,7 +234,6 @@
       }).join('');
     }
 
-    // 상태 변경
     async function updateStatus(id, newStatus) {
       const { error } = await _supabase
         .from('dock_control')
@@ -258,6 +258,29 @@
     }
 
     function filterData() { renderData(); }
+
+    // 엑셀 다운로드 기능
+    function downloadExcel() {
+      if(allRecords.length === 0) {
+        alert('다운로드할 데이터가 없습니다.');
+        return;
+      }
+      
+      const excelData = allRecords.map(item => ({
+        '입문일시': new Date(item.created_at).toLocaleString('ko-KR'),
+        '차량번호': item.car_number || '-',
+        '운전자 성함': item.driver_name || '-',
+        '연락처': item.phone_number || '-',
+        '상태': item.status || '대기중'
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "입문현황");
+
+      const selectedDate = document.getElementById('date-filter').value;
+      XLSX.writeFile(workbook, `차량입문현황_${selectedDate}.xlsx`);
+    }
   </script>
 </body>
 </html>
