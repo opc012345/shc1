@@ -100,6 +100,32 @@
     .btn-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
     .btn-cancel:hover { background: #fca5a5; }
     .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 15px 0; }
+
+    /* Custom Cancel Modal Styles */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center;
+      z-index: 1000; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: fadeIn 0.2s ease-out;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 12px; line-height: 1.4; text-align: center; }
+    .modal-input {
+      width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+      font-size: 16px; text-align: center; outline: none; margin-bottom: 16px;
+    }
+    .modal-input:focus { border-color: #dc2626; }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btn {
+      flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px;
+      font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .modal-btn-confirm { background: #0f172a; color: white; }
+    .modal-btn-cancel { background: #f1f5f9; color: #64748b; }
   </style>
 </head>
 <body>
@@ -206,6 +232,18 @@
 
   </div>
 
+  <!-- 취소 입력 커스텀 모달 -->
+  <div class="modal-overlay" id="cancelModal">
+    <div class="modal-box">
+      <div class="modal-title">알림을 취소하려면 등록하셨던<br>[연락처 뒤 4자리]를 입력해 주세요.</div>
+      <input type="input" pattern="[0-9]*" inputmode="numeric" maxlength="4" class="modal-input" id="cancelInput" placeholder="숫자 4자리 입력">
+      <div class="modal-btns">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCancelModal()">취소</button>
+        <button type="button" class="modal-btn modal-btn-confirm" onclick="submitCancel()">확인</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
@@ -213,6 +251,9 @@
 
     const TELEGRAM_BOT_TOKEN = "7817457788:AAGx0aM13P6yIq3kGkU5H-3Q3g-9LwZfU0o"; 
     const TELEGRAM_CHAT_ID = "-100234567890"; 
+
+    let currentCancelTargetId = null;
+    let currentCancelTargetPhone = null;
 
     window.onload = function() {
       const savedCar = localStorage.getItem('shc_car');
@@ -305,14 +346,12 @@
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      // 현재 화면에 입력된 값 기준 (없으면 저장소 값 사용)
       const inputCar = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const inputPhone = document.getElementById('phoneNumber').value.trim();
 
       const car = inputCar || localStorage.getItem('shc_car') || localStorage.getItem('shc_last_car');
       const phone = inputPhone || localStorage.getItem('shc_phone') || localStorage.getItem('shc_last_phone');
 
-      // 차량번호와 연락처 둘 다 정확히 있어야만 본인 조회를 진행함
       if (!car || !phone) {
         container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
         return;
@@ -321,7 +360,6 @@
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
-      // 차량번호 AND 전화번호가 모두 본인 것과 정확히 일치하는 내역만 조회 (타인 내역 차단)
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
@@ -350,7 +388,7 @@
 
         let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
         if (item.status === '대기중') {
-          actionHtml = `<button class="btn-cancel" onclick="requestCancel(${item.id}, '${item.phone_number}')">취소</button>`;
+          actionHtml = `<button class="btn-cancel" onclick="openCancelModal(${item.id}, '${item.phone_number}')">취소</button>`;
         }
 
         const card = document.createElement('div');
@@ -390,24 +428,43 @@
       return phone.substring(0, 7) + '-****';
     }
 
-    async function requestCancel(id, originalPhone) {
-      const inputVal = prompt('알림을 취소하려면 등록하셨던 [연락처 뒤 4자리]를 입력해 주세요.');
-      if (!inputVal) return;
+    // 커스텀 모달 열기/닫기 제어 함수
+    function openCancelModal(id, phone) {
+      currentCancelTargetId = id;
+      currentCancelTargetPhone = phone;
+      document.getElementById('cancelInput').value = '';
+      document.getElementById('cancelModal').classList.add('show');
+      document.getElementById('cancelInput').focus();
+    }
 
-      const cleanOriginal = originalPhone.replace(/[^0-9]/g, '');
-      const backendLast4 = cleanOriginal.slice(-4);
+    function closeCancelModal() {
+      document.getElementById('cancelModal').classList.remove('show');
+      currentCancelTargetId = null;
+      currentCancelTargetPhone = null;
+    }
 
-      if (inputVal.trim() !== backendLast4) {
-        alert('연락처 뒤 4자리가 일치하지 않습니다. 본인만 취소할 수 있습니다.');
+    async function submitCancel() {
+      const inputVal = document.getElementById('cancelInput').value.trim();
+      if (!inputVal) {
+        alert('연락처 뒤 4자리를 입력해주세요.');
         return;
       }
 
-      if (!confirm('정말 도착 알림을 취소하시겠습니까?')) return;
+      const cleanOriginal = currentCancelTargetPhone.replace(/[^0-9]/g, '');
+      const backendLast4 = cleanOriginal.slice(-4);
+
+      if (inputVal !== backendLast4) {
+        alert('연락처 뒤 4자리가 일치하지 않습니다.');
+        return;
+      }
+
+      const targetId = currentCancelTargetId;
+      closeCancelModal();
 
       const { error } = await _supabase
         .from('dock_control')
         .update({ status: '입문취소' })
-        .eq('id', id);
+        .eq('id', targetId);
 
       if (error) {
         alert('취소 실패: ' + error.message);
