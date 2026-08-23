@@ -56,6 +56,9 @@
     .btn-telegram { background: #0088cc; color: white; }
     .btn-telegram:hover { background: #0077b5; }
 
+    .btn-logout { background: #dc2626; color: white; }
+    .btn-logout:hover { background: #b91c1c; }
+
     .btn-notify-on {
       background: #10b981 !important;
       color: white !important;
@@ -147,6 +150,7 @@
       <button class="btn-icon btn-telegram" onclick="openTelegramModal()"><i class="fa-paper-plane fa-solid"></i> 텔레그램 설정</button>
       <button class="btn-icon" id="btnNotify" onclick="toggleNotifications()"><i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)</button>
       <button class="btn-icon" onclick="loadData()"><i class="fa-solid fa-rotate-right"></i></button>
+      <button class="btn-icon btn-logout" id="btnLogout" onclick="logout()" style="display: none;"><i class="fa-solid fa-right-from-bracket"></i> 로그아웃</button>
     </div>
   </div>
 
@@ -265,9 +269,28 @@
     let currentStatusFilter = '전체';
     let isNotificationOn = false;
     let lastRecordCount = -1;
+    let autoRefreshInterval = null;
 
     let originalTitle = "차량입문 관제 시스템 - 신흥정밀";
     let titleInterval = null;
+
+    // 페이지 로드 시 기존 로그인 상태 및 알림 설정 복원
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. 알림 설정 복원
+      const savedNotify = localStorage.getItem('shc_admin_notify');
+      if (savedNotify === 'ON') {
+        isNotificationOn = true;
+        updateNotifyUI(true);
+      } else {
+        isNotificationOn = false;
+        updateNotifyUI(false);
+      }
+
+      // 2. 세션 로그인 상태 확인
+      if (sessionStorage.getItem('shc_authenticated') === 'true') {
+        showDashboard();
+      }
+    });
 
     function updateClock() {
       const now = new Date();
@@ -278,39 +301,86 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    function toggleNotifications() {
-      const btn = document.getElementById('btnNotify');
+    function checkAuth() {
+      const pass = document.getElementById('passcode').value;
+      if (pass === "1234") {
+        sessionStorage.setItem('shc_authenticated', 'true'); // 로그인 인증 저장
+        showDashboard();
+      } else {
+        alert('비밀번호가 올바르지 않습니다.');
+      }
+    }
 
+    // 대시보드 화면 표시 및 데이터 초기화
+    function showDashboard() {
+      document.getElementById('authBox').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('btnLogout').style.display = 'flex';
+      
+      document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
+      loadData();
+      
+      if (!autoRefreshInterval) {
+        autoRefreshInterval = setInterval(loadData, 5000);
+      }
+    }
+
+    // 로그아웃 처리
+    function logout() {
+      sessionStorage.removeItem('shc_authenticated');
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+      }
+      document.getElementById('passcode').value = '';
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'none';
+      document.getElementById('authBox').style.display = 'block';
+    }
+
+    function toggleNotifications() {
       if (!isNotificationOn) {
         if ("Notification" in window) {
           Notification.requestPermission().then(permission => {
             isNotificationOn = true;
-            btn.classList.add('btn-notify-on');
-            btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
-            speakVoiceNotification(); // 버튼 활성화 시 테스트 음성 출력
+            localStorage.setItem('shc_admin_notify', 'ON');
+            updateNotifyUI(true);
+            speakVoiceNotification();
           });
         } else {
           isNotificationOn = true;
-          btn.classList.add('btn-notify-on');
-          btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
+          localStorage.setItem('shc_admin_notify', 'ON');
+          updateNotifyUI(true);
           speakVoiceNotification();
         }
       } else {
         isNotificationOn = false;
+        localStorage.setItem('shc_admin_notify', 'OFF');
+        updateNotifyUI(false);
+      }
+    }
+
+    function updateNotifyUI(isOn) {
+      const btn = document.getElementById('btnNotify');
+      if (!btn) return;
+
+      if (isOn) {
+        btn.classList.add('btn-notify-on');
+        btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
+      } else {
         btn.classList.remove('btn-notify-on');
         btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> 알림 끄기 (Off)`;
       }
     }
 
-    /* 음성 합성(TTS)을 이용한 "차량 입문 했습니다" 음성 안내 */
     function speakVoiceNotification() {
       if (!isNotificationOn) return;
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // 이전 음성 재생 중단
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance("차량 입문 했습니다");
         utterance.lang = 'ko-KR';
-        utterance.rate = 1.0; // 말하는 속도
-        utterance.pitch = 1.0; // 음높이
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -429,20 +499,6 @@
       }
     }
 
-    function checkAuth() {
-      const pass = document.getElementById('passcode').value;
-      if (pass === "1234") {
-        document.getElementById('authBox').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        
-        document.getElementById('dateFilter').value = new Date().toISOString().split('T')[0];
-        loadData();
-        setInterval(loadData, 5000);
-      } else {
-        alert('비밀번호가 올바르지 않습니다.');
-      }
-    }
-
     async function loadData() {
       const selectedDate = document.getElementById('dateFilter').value;
       
@@ -460,7 +516,7 @@
       }
 
       if (lastRecordCount !== -1 && data.length > lastRecordCount) {
-        speakVoiceNotification();         // 비프음 대신 "차량 입문 했습니다" 음성 출력
+        speakVoiceNotification();
         if (data.length > 0) {
           sendDesktopNotification(data[0]);
           startTitleFlashing();
