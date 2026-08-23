@@ -214,6 +214,18 @@
       loadHistoryStatus();
     }
 
+    // 본인 기기 구분을 위한 토큰 저장/조회
+    function getMySubmissionIds() {
+      const ids = localStorage.getItem('shc_my_submissions');
+      return ids ? JSON.parse(ids) : [];
+    }
+
+    function saveMySubmissionId(id) {
+      const ids = getMySubmissionIds();
+      ids.push(id);
+      localStorage.setItem('shc_my_submissions', JSON.stringify(ids));
+    }
+
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -247,12 +259,14 @@
       if (error) {
         alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
       } else {
+        if (data && data[0]) {
+          saveMySubmissionId(data[0].id); // 본인 신청 건 ID 저장
+        }
         alert('차량 입문 신청이 정상적으로 접수되었습니다.');
         loadHistoryStatus();
       }
     });
 
-    // 서버(Supabase) 실시간 조회 (마스킹 적용 + 최신 1건)
     async function loadHistoryStatus() {
       const rawCarNum = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
@@ -274,7 +288,6 @@
         query = query.eq('phone_number', phoneNumber);
       }
 
-      // 최신 1건만 조회
       const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
 
       if (error || !data || data.length === 0) {
@@ -292,9 +305,23 @@
       if (item.status === '출차완료') dotClass = 'dot-done';
       if (item.status === '입문취소') dotClass = 'dot-cancel';
 
-      // 마스킹 처리 함수 적용 (조성민 -> 조*민 / 01012345678 -> 010-****-5678)
       const maskedName = maskName(item.driver_name);
       const maskedPhone = maskPhone(item.phone_number);
+
+      // 본인 기기에서 접수한 건인지 확인
+      const myIds = getMySubmissionIds();
+      const isMySubmission = myIds.includes(item.id);
+
+      let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
+      if (item.status === '대기중') {
+        if (isMySubmission) {
+          // 본인이 신청한 경우에만 취소 버튼 표시
+          actionHtml = `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>`;
+        } else {
+          // 타인이 검색한 경우 취소 불가 표시
+          actionHtml = `<span style="color:#94a3b8; font-size:11px;">접수됨</span>`;
+        }
+      }
 
       const card = document.createElement('div');
       card.className = 'history-card';
@@ -309,22 +336,18 @@
           <span>${item.status}</span>
         </div>
         <div>
-          ${item.status === '대기중' 
-            ? `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>` 
-            : `<span style="color:#cbd5e1; font-size:11px;">-</span>`}
+          ${actionHtml}
         </div>
       `;
       container.appendChild(card);
     }
 
-    // 이름 마스킹 (예: 조성민 -> 조*민)
     function maskName(name) {
       if (!name) return '-';
       if (name.length <= 2) return name.substring(0, 1) + '*';
       return name.substring(0, 1) + '*'.repeat(name.length - 2) + name.substring(name.length - 1);
     }
 
-    // 전화번호 마스킹 (예: 010-1234-5678 -> 010-****-5678, 1111 -> ***1)
     function maskPhone(phone) {
       if (!phone) return '-';
       const clean = phone.replace(/[^0-9]/g, '');
@@ -339,6 +362,12 @@
     }
 
     async function cancelDock(id) {
+      const myIds = getMySubmissionIds();
+      if (!myIds.includes(id)) {
+        alert('본인 스마트폰에서 접수한 내역만 취소할 수 있습니다.');
+        return;
+      }
+
       if (!confirm('신청을 취소하시겠습니까?')) return;
 
       const { error } = await _supabase
