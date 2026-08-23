@@ -266,6 +266,9 @@
     let isNotificationOn = false;
     let lastRecordCount = -1;
 
+    let originalTitle = "차량입문 관제 시스템 - 신흥정밀";
+    let titleInterval = null;
+
     function updateClock() {
       const now = new Date();
       const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -284,14 +287,13 @@
             isNotificationOn = true;
             btn.classList.add('btn-notify-on');
             btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
-            if (permission !== "granted") {
-              alert("윈도우 알림 권한이 거부되었지만 소리 및 텔레그램 알림은 작동합니다.");
-            }
+            speakVoiceNotification(); // 버튼 활성화 시 테스트 음성 출력
           });
         } else {
           isNotificationOn = true;
           btn.classList.add('btn-notify-on');
           btn.innerHTML = `<i class="fa-solid fa-bell"></i> 알림 켜짐 (On)`;
+          speakVoiceNotification();
         }
       } else {
         isNotificationOn = false;
@@ -300,30 +302,60 @@
       }
     }
 
-    function playBeep() {
+    /* 음성 합성(TTS)을 이용한 "차량 입문 했습니다" 음성 안내 */
+    function speakVoiceNotification() {
       if (!isNotificationOn) return;
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } catch(e){}
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // 이전 음성 재생 중단
+        const utterance = new SpeechSynthesisUtterance("차량 입문 했습니다");
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0; // 말하는 속도
+        utterance.pitch = 1.0; // 음높이
+        window.speechSynthesis.speak(utterance);
+      }
     }
 
     function sendDesktopNotification(latestItem) {
       if (!isNotificationOn) return;
       if ("Notification" in window && Notification.permission === "granted") {
-        new Notification("🚛 신규 차량 입문 신청!", {
+        const noti = new Notification("🚛 [신흥정밀] 신규 차량 입문 신청!", {
           body: `차량번호: ${latestItem.car_number}\n운전자: ${latestItem.driver_name} (${latestItem.phone_number})`,
-          icon: "https://opc012345.github.io/shc1/favicon.ico"
+          icon: "https://opc012345.github.io/shc1/favicon.ico",
+          requireInteraction: true
         });
+
+        noti.onclick = function() {
+          window.focus();
+          stopTitleFlashing();
+          this.close();
+        };
       }
     }
 
-    /* 텔레그램 메세지 발송 함수 */
+    function startTitleFlashing() {
+      if (titleInterval) return;
+      let isAlt = false;
+      titleInterval = setInterval(() => {
+        document.title = isAlt ? "🚨 [신규 입문 접수!] 🚨" : originalTitle;
+        isAlt = !isAlt;
+      }, 800);
+    }
+
+    function stopTitleFlashing() {
+      if (titleInterval) {
+        clearInterval(titleInterval);
+        titleInterval = null;
+        document.title = originalTitle;
+      }
+    }
+
+    window.addEventListener('focus', stopTitleFlashing);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        stopTitleFlashing();
+      }
+    });
+
     async function sendTelegramNotification(item) {
       const token = localStorage.getItem('shc_tg_token');
       const chatId = localStorage.getItem('shc_tg_chat_id');
@@ -428,9 +460,10 @@
       }
 
       if (lastRecordCount !== -1 && data.length > lastRecordCount) {
-        playBeep();
+        speakVoiceNotification();         // 비프음 대신 "차량 입문 했습니다" 음성 출력
         if (data.length > 0) {
           sendDesktopNotification(data[0]);
+          startTitleFlashing();
           sendTelegramNotification(data[0]);
         }
       }
