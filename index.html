@@ -77,7 +77,7 @@
     .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
     
-    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
     .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
     
     .history-car-tag { font-weight: bold; color: #0f172a; font-size: 14px; margin-bottom: 2px; }
@@ -191,6 +191,11 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     window.onload = function() {
+      // 브라우저 고유 ID(기기 식별용)가 없으면 생성하여 부여
+      if (!localStorage.getItem('shc_device_uuid')) {
+        localStorage.setItem('shc_device_uuid', 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
+      }
+
       const savedCar = localStorage.getItem('shc_car');
       const savedName = localStorage.getItem('shc_name');
       const savedPhone = localStorage.getItem('shc_phone');
@@ -214,16 +219,39 @@
       loadHistoryStatus();
     }
 
-    // 본인 기기 구분을 위한 토큰 저장/조회
+    // 💡 이 기기(브라우저)에서 접수한 항목들의 고유 ID 관리 (30일 지난 항목 자동 필터링)
     function getMySubmissionIds() {
-      const ids = localStorage.getItem('shc_my_submissions');
-      return ids ? JSON.parse(ids) : [];
+      const storedData = localStorage.getItem('shc_my_submissions');
+      if (!storedData) return [];
+      
+      try {
+        const parsed = JSON.parse(storedData);
+        if (!Array.isArray(parsed)) return [];
+
+        const thirtyDaysAgo = new Date().getTime() - (30 * 24 * 60 * 60 * 1000);
+        const validItems = parsed.filter(item => item.time > thirtyDaysAgo);
+        
+        localStorage.setItem('shc_my_submissions', JSON.stringify(validItems));
+        return validItems.map(item => item.id);
+      } catch (e) {
+        return [];
+      }
     }
 
     function saveMySubmissionId(id) {
-      const ids = getMySubmissionIds();
-      ids.push(id);
-      localStorage.setItem('shc_my_submissions', JSON.stringify(ids));
+      const storedData = localStorage.getItem('shc_my_submissions');
+      let list = [];
+      try {
+        list = storedData ? JSON.parse(storedData) : [];
+      } catch(e) {
+        list = [];
+      }
+
+      const thirtyDaysAgo = new Date().getTime() - (30 * 24 * 60 * 60 * 1000);
+      list = list.filter(item => item.time > thirtyDaysAgo);
+      list.push({ id: id, time: new Date().getTime() });
+      
+      localStorage.setItem('shc_my_submissions', JSON.stringify(list));
     }
 
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
@@ -233,6 +261,7 @@
       const driverName = document.getElementById('driverName').value.trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
+      const deviceUuid = localStorage.getItem('shc_device_uuid');
 
       if (remember) {
         localStorage.setItem('shc_car', carNumber);
@@ -248,9 +277,16 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 접수 중...';
 
+      // 💡 DB에 저장할 때 기기 식별 고유값(device_uuid)을 같이 저장하도록 전송
       const { data, error } = await _supabase
         .from('dock_control')
-        .insert([{ car_number: carNumber, driver_name: driverName, phone_number: phoneNumber, status: '대기중' }])
+        .insert([{ 
+          car_number: carNumber, 
+          driver_name: driverName, 
+          phone_number: phoneNumber, 
+          status: '대기중',
+          device_uuid: deviceUuid 
+        }])
         .select();
 
       btn.disabled = false;
@@ -260,7 +296,7 @@
         alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
       } else {
         if (data && data[0]) {
-          saveMySubmissionId(data[0].id); // 본인 신청 건 ID 저장
+          saveMySubmissionId(data[0].id); // 내 기기 로컬에 해당 ID 기록
         }
         alert('차량 입문 신청이 정상적으로 접수되었습니다.');
         loadHistoryStatus();
@@ -280,6 +316,9 @@
         return;
       }
 
+      const thirtyDaysAgoDate = new Date();
+      thirtyDaysAgoDate.setDate(thirtyDaysAgoDate.getDate() - 30);
+
       let query = _supabase.from('dock_control').select('*');
 
       if (rawCarNum) {
@@ -288,58 +327,63 @@
         query = query.eq('phone_number', phoneNumber);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false }).limit(1);
+      // 최근 30일 이내 데이터만 조회
+      query = query.gte('created_at', thirtyDaysAgoDate.toISOString());
+
+      // 💡 limit(1)을 제거하여 최근 30일 동안의 모든 내역이 쌓여서 나오도록 수정
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
-        container.innerHTML = '<div class="empty-msg">최근 입문 신청 내역이 없습니다.</div>';
+        container.innerHTML = '<div class="empty-msg">최근 30일 이내 입문 신청 내역이 없습니다.</div>';
         return;
       }
 
       container.innerHTML = '';
-      const item = data[0];
-
-      const dt = new Date(item.created_at);
-      const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-
-      let dotClass = 'dot-wait';
-      if (item.status === '출차완료') dotClass = 'dot-done';
-      if (item.status === '입문취소') dotClass = 'dot-cancel';
-
-      const maskedName = maskName(item.driver_name);
-      const maskedPhone = maskPhone(item.phone_number);
-
-      // 본인 기기에서 접수한 건인지 확인
       const myIds = getMySubmissionIds();
-      const isMySubmission = myIds.includes(item.id);
+      const currentDeviceUuid = localStorage.getItem('shc_device_uuid');
 
-      let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
-      if (item.status === '대기중') {
-        if (isMySubmission) {
-          // 본인이 신청한 경우에만 취소 버튼 표시
-          actionHtml = `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>`;
-        } else {
-          // 타인이 검색한 경우 취소 불가 표시
-          actionHtml = `<span style="color:#94a3b8; font-size:11px;">접수됨</span>`;
+      // 💡 불러온 모든 내역을 반복문(forEach)을 돌려 리스트 카드로 누적 표출
+      data.forEach(item => {
+        const dt = new Date(item.created_at);
+        const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+        let dotClass = 'dot-wait';
+        if (item.status === '출차완료') dotClass = 'dot-done';
+        if (item.status === '입문취소') dotClass = 'dot-cancel';
+
+        const maskedName = maskName(item.driver_name);
+        const maskedPhone = maskPhone(item.phone_number);
+
+        // 💡 내 기기에서 등록한 건이거나 혹은 DB에 기록된 device_uuid가 내 기기와 일치할 때만 취소 버튼 활성화
+        const isMySubmission = myIds.includes(item.id) || (item.device_uuid && item.device_uuid === currentDeviceUuid);
+
+        let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
+        if (item.status === '대기중') {
+          if (isMySubmission) {
+            actionHtml = `<button class="btn-cancel" onclick="cancelDock(${item.id})">취소</button>`;
+          } else {
+            actionHtml = `<span style="color:#94a3b8; font-size:11px;">접수됨</span>`;
+          }
         }
-      }
 
-      const card = document.createElement('div');
-      card.className = 'history-card';
-      card.innerHTML = `
-        <div>
-          <div class="history-car-tag">${item.car_number}</div>
-          <div class="history-user-info">${maskedName} | ${maskedPhone}</div>
-          <div class="history-time">${dateStr}</div>
-        </div>
-        <div class="history-status">
-          <div class="dot ${dotClass}"></div>
-          <span>${item.status}</span>
-        </div>
-        <div>
-          ${actionHtml}
-        </div>
-      `;
-      container.appendChild(card);
+        const card = document.createElement('div');
+        card.className = 'history-card';
+        card.innerHTML = `
+          <div>
+            <div class="history-car-tag">${item.car_number}</div>
+            <div class="history-user-info">${maskedName} | ${maskedPhone}</div>
+            <div class="history-time">${dateStr}</div>
+          </div>
+          <div class="history-status">
+            <div class="dot ${dotClass}"></div>
+            <span>${item.status}</span>
+          </div>
+          <div>
+            ${actionHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
     }
 
     function maskName(name) {
@@ -363,8 +407,9 @@
 
     async function cancelDock(id) {
       const myIds = getMySubmissionIds();
+      
       if (!myIds.includes(id)) {
-        alert('본인 스마트폰에서 접수한 내역만 취소할 수 있습니다.');
+        alert('본인 스마트폰(또는 PC)에서 접수한 내역만 취소할 수 있습니다.');
         return;
       }
 
