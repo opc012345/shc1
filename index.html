@@ -13,7 +13,6 @@
     .container { background: #ffffff; width: 100%; max-width: 440px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); padding: 28px 24px; margin-top: 10px; margin-bottom: 20px; }
     
     .header-logo { text-align: center; margin-bottom: 12px; }
-    /* 동그란 로고 디자인 수정 영역 */
     .shc-logo {
       display: inline-flex;
       justify-content: center;
@@ -29,9 +28,28 @@
       letter-spacing: -0.5px;
       box-shadow: 0 2px 6px rgba(200, 30, 43, 0.3);
     }
-    .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 8px; }
-    .header-sub { font-size: 13px; color: #64748b; text-align: center; line-height: 1.5; margin-bottom: 24px; }
-    .header-sub span { color: #dc2626; font-weight: bold; }
+    .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
+    
+    /* 헤더 안내문구 박스 */
+    .header-guide-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; text-align: left; }
+    .header-sub-main { font-size: 13.5px; color: #1e293b; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+    .header-sub-list { font-size: 12.5px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
+    .header-sub-notice { font-size: 11.5px; color: #dc2626; line-height: 1.5; font-weight: 600; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+
+    /* 아코디언 (약도 및 담당자 연락처) */
+    .accordion-toggle {
+      width: 100%; padding: 12px 16px; background-color: #f1f5f9; color: #334155; border: 1.5px solid #cbd5e1;
+      border-radius: 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; display: flex;
+      justify-content: space-between; align-items: center; margin-bottom: 20px; transition: all 0.2s;
+    }
+    .accordion-toggle:hover { background-color: #e2e8f0; }
+    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-top: -12px; margin-bottom: 20px; }
+    .accordion-content.show { display: block; }
+    .contact-group { margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; }
+    .contact-group:last-child { margin-bottom: 8px; border-bottom: none; padding-bottom: 0; }
+    .contact-item { font-size: 13px; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .contact-item a { color: #dc2626; text-decoration: none; font-weight: bold; background: #fee2e2; padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+    .map-img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0; }
 
     .form-group { margin-bottom: 16px; }
     .label-title { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
@@ -88,11 +106,40 @@
       <span class="shc-logo">SHC</span>
     </div>
     <h1 class="header-title">신흥정밀 차량입문 신청</h1>
-    <p class="header-sub">
-      도착 후 정보를 입력하시면<br>
-      관제 담당자가 확인 후 안내해 드립니다.<br>
-      <span>접수 후 잠시만 대기해 주세요.</span>
-    </p>
+    
+    <!-- 안내문구 영역 -->
+    <div class="header-guide-box">
+      <p class="header-sub-main">보안실 통과 후 아래 안내에 따라 주차해 주세요.</p>
+      <div class="header-sub-list">
+        <div>🔹 <strong>처음 방문:</strong> 대기장소 주차 후 신청</div>
+        <div>🔹 <strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 신청</div>
+      </div>
+      <div class="header-sub-notice">
+        ※ 고정 기사님도 방문 시마다 매번 입문 신청을 제출해 주세요.<br>
+        ※ 신청 후 대기해 주시고, 5분 이상 지연 시 [담당자 연락처]로 연락해 주세요.
+      </div>
+    </div>
+
+    <!-- 약도 및 담당자 연락처 아코디언 버튼 -->
+    <button type="button" class="accordion-toggle" onclick="toggleAccordion()">
+      <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i> 🗺️ 약도 및 담당자 연락처 보기</span>
+      <i class="fa-solid fa-chevron-down" id="accordionIcon"></i>
+    </button>
+    
+    <div class="accordion-content" id="accordionContent">
+      <div class="contact-group">
+        <div class="contact-item">
+          <span><strong>오성수 과장</strong> (010-7178-4568)</span>
+          <a href="tel:01071784568"><i class="fa-solid fa-phone"></i> 전화걸기</a>
+        </div>
+        <div class="contact-item">
+          <span><strong>김승준 대리</strong> (010-4844-1817)</span>
+          <a href="tel:01048441817"><i class="fa-solid fa-phone"></i> 전화걸기</a>
+        </div>
+      </div>
+      <!-- 약도 이미지 연결 위치 -->
+      <img src="map.png" alt="신흥정밀 약도" class="map-img">
+    </div>
 
     <form id="dockForm">
       <div class="form-group">
@@ -161,6 +208,17 @@
       cleanOldHistory();
       loadHistoryStatus();
     };
+
+    function toggleAccordion() {
+      const content = document.getElementById('accordionContent');
+      const icon = document.getElementById('accordionIcon');
+      content.classList.toggle('show');
+      if (content.classList.contains('show')) {
+        icon.className = "fa-solid fa-chevron-up";
+      } else {
+        icon.className = "fa-solid fa-chevron-down";
+      }
+    }
 
     function clearInput(id) {
       document.getElementById(id).value = '';
