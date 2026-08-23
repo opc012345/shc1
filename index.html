@@ -21,19 +21,9 @@
     
     .header-logo { text-align: center; margin-bottom: 12px; }
     .shc-logo {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      background: #c81e2b;
-      color: white;
-      font-weight: 900;
-      font-size: 15px;
-      font-style: italic;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      letter-spacing: -0.5px;
-      box-shadow: 0 2px 6px rgba(200, 30, 43, 0.3);
+      display: inline-flex; justify-content: center; align-items: center; background: #c81e2b; color: white;
+      font-weight: 900; font-size: 15px; font-style: italic; width: 52px; height: 52px; border-radius: 50%;
+      letter-spacing: -0.5px; box-shadow: 0 2px 6px rgba(200, 30, 43, 0.3);
     }
     .header-title { font-size: 24px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 12px; }
     
@@ -147,7 +137,7 @@
       <div class="form-group">
         <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 80가 1234" required>
+          <input type="text" id="carNumber" placeholder="예: 80가 1234" oninput="loadHistoryStatus()" required>
           <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
@@ -160,7 +150,7 @@
 
         <div class="form-group">
           <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required>
+          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" oninput="loadHistoryStatus()" required>
         </div>
       </div>
 
@@ -187,7 +177,7 @@
       </div>
 
       <div class="history-list" id="historyList">
-        <div class="empty-msg">최근 30일간의 신청 내역이 없습니다.</div>
+        <div class="empty-msg">차량번호 또는 연락처 입력 시 내역을 조회합니다.</div>
       </div>
     </div>
 
@@ -207,7 +197,6 @@
       if (savedName) document.getElementById('driverName').value = savedName;
       if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
 
-      cleanOldHistory();
       loadHistoryStatus();
     };
 
@@ -215,22 +204,12 @@
       const content = document.getElementById('accordionContent');
       const icon = document.getElementById('accordionIcon');
       content.classList.toggle('show');
-      if (content.classList.contains('show')) {
-        icon.className = "fa-solid fa-chevron-up";
-      } else {
-        icon.className = "fa-solid fa-chevron-down";
-      }
+      icon.className = content.classList.contains('show') ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
     }
 
     function clearInput(id) {
       document.getElementById(id).value = '';
-    }
-
-    function cleanOldHistory() {
-      let ids = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      ids = ids.filter(item => item.timestamp > thirtyDaysAgo);
-      localStorage.setItem('shc_history_ids', JSON.stringify(ids));
+      loadHistoryStatus();
     }
 
     document.getElementById('dockForm').addEventListener('submit', async (e) => {
@@ -260,35 +239,40 @@
         alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
       } else {
         alert('차량 입문 신청이 정상적으로 접수되었습니다.');
-        if (data && data.length > 0) {
-          let ids = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
-          ids.unshift({ id: data[0].id, timestamp: Date.now() });
-          localStorage.setItem('shc_history_ids', JSON.stringify(ids));
-          loadHistoryStatus();
-        }
+        loadHistoryStatus();
       }
     });
 
+    // 서버(Supabase) 직접 실시간 조회 함수
     async function loadHistoryStatus() {
-      const idsObj = JSON.parse(localStorage.getItem('shc_history_ids') || '[]');
+      const carNumber = document.getElementById('carNumber').value.trim();
+      const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const container = document.getElementById('historyList');
 
       const now = new Date();
       document.getElementById('lastCheckTime').innerText = `최종 확인: ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-      if (idsObj.length === 0) {
-        container.innerHTML = '<div class="empty-msg">최근 30일간의 신청 내역이 없습니다.</div>';
+      if (!carNumber && !phoneNumber) {
+        container.innerHTML = '<div class="empty-msg">차량번호 또는 연락처 입력 시 내역을 조회합니다.</div>';
         return;
       }
 
-      const idArray = idsObj.map(item => item.id);
-      const { data, error } = await _supabase
-        .from('dock_control')
-        .select('*')
-        .in('id', idArray)
-        .order('created_at', { ascending: false });
+      let query = _supabase.from('dock_control').select('*');
 
-      if (error || !data) return;
+      if (carNumber && phoneNumber) {
+        query = query.or(`car_number.eq.${carNumber},phone_number.eq.${phoneNumber}`);
+      } else if (carNumber) {
+        query = query.eq('car_number', carNumber);
+      } else {
+        query = query.eq('phone_number', phoneNumber);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false }).limit(10);
+
+      if (error || !data || data.length === 0) {
+        container.innerHTML = '<div class="empty-msg">최근 입문 신청 내역이 없습니다.</div>';
+        return;
+      }
 
       container.innerHTML = '';
       data.forEach(item => {
