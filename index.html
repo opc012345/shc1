@@ -191,7 +191,7 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     window.onload = function() {
-      // 브라우저 고유 ID(기기 식별용)가 없으면 생성하여 부여
+      // 기기 고유 ID 부여
       if (!localStorage.getItem('shc_device_uuid')) {
         localStorage.setItem('shc_device_uuid', 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15));
       }
@@ -219,7 +219,6 @@
       loadHistoryStatus();
     }
 
-    // 💡 이 기기(브라우저)에서 접수한 항목들의 고유 ID 관리 (30일 지난 항목 자동 필터링)
     function getMySubmissionIds() {
       const storedData = localStorage.getItem('shc_my_submissions');
       if (!storedData) return [];
@@ -277,7 +276,6 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 접수 중...';
 
-      // 💡 DB에 저장할 때 기기 식별 고유값(device_uuid)을 같이 저장하도록 전송
       const { data, error } = await _supabase
         .from('dock_control')
         .insert([{ 
@@ -296,7 +294,7 @@
         alert('신청 접수 중 오류가 발생했습니다: ' + error.message);
       } else {
         if (data && data[0]) {
-          saveMySubmissionId(data[0].id); // 내 기기 로컬에 해당 ID 기록
+          saveMySubmissionId(data[0].id);
         }
         alert('차량 입문 신청이 정상적으로 접수되었습니다.');
         loadHistoryStatus();
@@ -327,10 +325,8 @@
         query = query.eq('phone_number', phoneNumber);
       }
 
-      // 최근 30일 이내 데이터만 조회
       query = query.gte('created_at', thirtyDaysAgoDate.toISOString());
 
-      // 💡 limit(1)을 제거하여 최근 30일 동안의 모든 내역이 쌓여서 나오도록 수정
       const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error || !data || data.length === 0) {
@@ -342,7 +338,6 @@
       const myIds = getMySubmissionIds();
       const currentDeviceUuid = localStorage.getItem('shc_device_uuid');
 
-      // 💡 불러온 모든 내역을 반복문(forEach)을 돌려 리스트 카드로 누적 표출
       data.forEach(item => {
         const dt = new Date(item.created_at);
         const dateStr = `${(dt.getMonth()+1).toString().padStart(2,'0')}.${dt.getDate().toString().padStart(2,'0')} ${dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -354,7 +349,6 @@
         const maskedName = maskName(item.driver_name);
         const maskedPhone = maskPhone(item.phone_number);
 
-        // 💡 내 기기에서 등록한 건이거나 혹은 DB에 기록된 device_uuid가 내 기기와 일치할 때만 취소 버튼 활성화
         const isMySubmission = myIds.includes(item.id) || (item.device_uuid && item.device_uuid === currentDeviceUuid);
 
         let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
