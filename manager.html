@@ -170,7 +170,7 @@
     };
 
     async function enableNotificationsAndSound() {
-      // 음성 안내 기능 잠금 해제 (사용자 인터랙션 필요)
+      // 음성 안내 기능 잠금 해제
       if ('speechSynthesis' in window) {
         const testUtterance = new SpeechSynthesisUtterance('');
         window.speechSynthesis.speak(testUtterance);
@@ -184,6 +184,11 @@
             body: "신규 차량 입문 시 음성 안내 및 윈도우 알림이 정상 발송됩니다.",
             icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
           });
+          
+          testNoti.onclick = (e) => {
+            e.preventDefault();
+            window.focus();
+          };
         } else {
           alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 [알림]을 허용으로 바꿔주세요.");
         }
@@ -271,15 +276,14 @@
         });
     }
 
-    // "차량이 입문 했습니다" 음성 안내 함수
     function playNotificationSound() {
       if (!isSoundOn) return;
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // 진행 중인 음성 취소
+        window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance('차량이 입문 했습니다');
         utterance.lang = 'ko-KR';
-        utterance.rate = 1.0; // 말하기 속도
-        utterance.pitch = 1.0; // 음높이
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -300,7 +304,15 @@
         };
 
         const newNoti = new Notification(title, options);
-        newNoti.onclick = () => { window.focus(); };
+        
+        // [수정 포인트] 알림 센터에서 클릭 시 404 루트 이동을 차단하고 현재 관제 페이지 포커스
+        newNoti.onclick = (event) => {
+          event.preventDefault(); // 도메인 루트로 자동 이동하는 브라우저 기본 동작 차단
+          window.focus();
+          // 현재 페이지 경로 재요청으로 안전하게 화면 이동
+          window.location.href = window.location.href.split('#')[0]; 
+        };
+
         notificationQueue.push(newNoti);
       }
     }
@@ -351,7 +363,6 @@
         return;
       }
 
-      // PC 테이블 HTML 생성
       tbody.innerHTML = filtered.map(item => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const status = item.status || '대기중';
@@ -380,7 +391,6 @@
         `;
       }).join('');
 
-      // 모바일 카드 HTML 생성
       mobileList.innerHTML = filtered.map(item => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const status = item.status || '대기중';
