@@ -51,7 +51,15 @@
     .contact-group:last-child { margin-bottom: 8px; border-bottom: none; padding-bottom: 0; }
     .contact-item { font-size: 13px; color: #334155; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
     .contact-item a { color: #dc2626; text-decoration: none; font-weight: bold; background: #fee2e2; padding: 4px 10px; border-radius: 6px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
-    .map-img { width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #e2e8f0; }
+    
+    /* 약도 이미지 및 클릭 안내 */
+    .map-container { position: relative; cursor: pointer; margin-top: 10px; }
+    .map-img { width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
+    .map-zoom-hint {
+      position: absolute; bottom: 8px; right: 8px; background: rgba(15, 23, 42, 0.75); color: #fff;
+      font-size: 10.5px; padding: 4px 8px; border-radius: 6px; pointer-events: none; backdrop-filter: blur(2px);
+      display: flex; align-items: center; gap: 4px;
+    }
 
     .form-group { margin-bottom: 16px; }
     .label-title { font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
@@ -81,13 +89,12 @@
     .btn-submit { width: 100%; padding: 16px; background-color: #dc2626; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.2s; }
     .btn-submit:active { transform: scale(0.98); }
 
-    /* 내역 영역 스타일 (개선됨) */
+    /* 내역 영역 스타일 */
     .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
     
     .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; }
     
-    /* 담당자용 모바일 스타일 카드 */
     .history-card { 
       background: #ffffff; 
       border: 1px solid #e2e8f0; 
@@ -102,7 +109,6 @@
     .card-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
     .card-time { font-family: monospace; font-size: 12px; color: #64748b; font-weight: 500; }
     
-    /* 담당자용 뱃지 스타일 동일 적용 */
     .badge-status { padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
     .badge-wait { background-color: #fef3c7; color: #b45309; }
     .badge-done { background-color: #d1fae5; color: #047857; }
@@ -120,13 +126,15 @@
     .btn-cancel:hover { background: #fee2e2; color: #dc2626; }
     .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; }
 
-    /* Custom Cancel Modal Styles */
+    /* 모달 공통 스타일 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.4); display: none; justify-content: center; align-items: center;
+      background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center;
       z-index: 1000; padding: 20px;
     }
     .modal-overlay.show { display: flex; }
+    
+    /* 취소 모달 */
     .modal-box {
       background: #ffffff; width: 100%; max-width: 360px; border-radius: 16px;
       padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: fadeIn 0.2s ease-out;
@@ -145,6 +153,17 @@
     }
     .modal-btn-confirm { background: #0f172a; color: white; }
     .modal-btn-cancel { background: #f1f5f9; color: #64748b; }
+
+    /* 이미지 라이트박스 모달 추가 */
+    .image-modal-content {
+      position: relative; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; align-items: center;
+    }
+    .image-modal-content img {
+      max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .image-modal-close {
+      position: absolute; top: -40px; right: 0; color: white; font-size: 28px; cursor: pointer; background: none; border: none; outline: none;
+    }
   </style>
 </head>
 <body>
@@ -198,7 +217,12 @@
           <a href="tel:01048441817"><i class="fa-solid fa-phone"></i> 전화걸기</a>
         </div>
       </div>
-      <img src="map.png" alt="신흥정밀 약도" class="map-img">
+      
+      <!-- 클릭 시 확대되는 약도 영역 -->
+      <div class="map-container" onclick="openMapModal()">
+        <img src="map.png" alt="신흥정밀 약도" class="map-img">
+        <div class="map-zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i> 터치하여 크게 보기</div>
+      </div>
     </div>
 
     <form id="dockForm">
@@ -263,6 +287,14 @@
     </div>
   </div>
 
+  <!-- 약도 크게 보기 라이트박스 모달 -->
+  <div class="modal-overlay" id="mapModal" onclick="closeMapModal()">
+    <div class="image-modal-content" onclick="event.stopPropagation();">
+      <button class="image-modal-close" onclick="closeMapModal()"><i class="fa-solid fa-xmark"></i></button>
+      <img src="map.png" alt="신흥정밀 약도 크게보기">
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
     const SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
@@ -288,6 +320,14 @@
       const icon = document.getElementById('accordionIcon');
       content.classList.toggle('show');
       icon.className = content.classList.contains('show') ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
+    }
+
+    /* 약도 크게 보기 모달 제어 함수 */
+    function openMapModal() {
+      document.getElementById('mapModal').classList.add('show');
+    }
+    function closeMapModal() {
+      document.getElementById('mapModal').classList.remove('show');
     }
 
     function clearInput(id) {
