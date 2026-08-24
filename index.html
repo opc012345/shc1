@@ -81,25 +81,44 @@
     .btn-submit { width: 100%; padding: 16px; background-color: #dc2626; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); transition: all 0.2s; }
     .btn-submit:active { transform: scale(0.98); }
 
+    /* 내역 영역 스타일 (개선됨) */
     .status-section { margin-top: 24px; border-top: 1px dashed #e2e8f0; padding-top: 18px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 700; margin-bottom: 12px; }
     
-    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
-    .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+    .history-list { display: flex; flex-direction: column; gap: 10px; max-height: 380px; overflow-y: auto; }
     
-    .history-car-tag { font-weight: bold; color: #0f172a; font-size: 13.5px; margin-bottom: 2px; }
-    .history-user-info { font-size: 11px; color: #64748b; margin-bottom: 2px; }
-    .history-time { font-weight: 500; color: #94a3b8; font-size: 10.5px; }
-    .history-status { display: flex; align-items: center; gap: 5px; font-weight: 700; }
-    
-    .dot { width: 7px; height: 7px; border-radius: 50%; }
-    .dot-wait { background: #f97316; }
-    .dot-done { background: #22c55e; }
-    .dot-cancel { background: #ef4444; }
+    /* 담당자용 모바일 스타일 카드 */
+    .history-card { 
+      background: #ffffff; 
+      border: 1px solid #e2e8f0; 
+      border-radius: 16px; 
+      padding: 14px 16px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    .btn-cancel { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; }
-    .btn-cancel:hover { background: #fca5a5; }
-    .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 15px 0; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+    .card-time { font-family: monospace; font-size: 12px; color: #64748b; font-weight: 500; }
+    
+    /* 담당자용 뱃지 스타일 동일 적용 */
+    .badge-status { padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-wait { background-color: #fef3c7; color: #b45309; }
+    .badge-done { background-color: #d1fae5; color: #047857; }
+    .badge-cancel { background-color: #ffe4e6; color: #be123c; }
+
+    .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .info-label { font-size: 10.5px; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
+    .info-val-car { font-size: 15px; font-weight: 900; color: #0f172a; margin-top: 1px; }
+    .info-val-user { font-size: 14px; font-weight: 700; color: #334155; margin-top: 1px; }
+
+    .card-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+    .card-phone { font-size: 12px; color: #64748b; font-family: monospace; }
+    
+    .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 5px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-cancel:hover { background: #fee2e2; color: #dc2626; }
+    .empty-msg { text-align: center; color: #94a3b8; font-size: 12px; padding: 20px 0; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; }
 
     /* Custom Cancel Modal Styles */
     .modal-overlay {
@@ -315,7 +334,7 @@
         return;
       }
 
-      // 2. DB 등록 성공 직후 텔레그램 API 직접 호출 (실패 위험 요소 제거)
+      // 2. DB 등록 성공 직후 텔레그램 API 직접 호출
       const botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
       const chatId = "-5175407977";
       
@@ -377,34 +396,43 @@
 
       data.forEach(item => {
         const dt = new Date(item.created_at);
-        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        let dotClass = 'dot-wait';
-        if (item.status === '출차완료') dotClass = 'dot-done';
-        if (item.status === '입문취소') dotClass = 'dot-cancel';
+        const status = item.status || '대기중';
+        let badgeClass = 'badge-wait';
+        if (status === '출차완료') badgeClass = 'badge-done';
+        if (status === '입문취소') badgeClass = 'badge-cancel';
 
         const maskedName = maskName(item.driver_name);
         const maskedPhone = maskPhone(item.phone_number);
 
-        let actionHtml = `<span style="color:#cbd5e1; font-size:11px;">-</span>`;
-        if (item.status === '대기중') {
-          actionHtml = `<button class="btn-cancel" onclick="openCancelModal(${item.id}, '${item.phone_number}')">취소</button>`;
+        let actionBtnHtml = `<span style="color:#94a3b8; font-size:11px; font-weight:500;">처리완료</span>`;
+        if (status === '대기중') {
+          actionBtnHtml = `<button class="btn-cancel" onclick="openCancelModal(${item.id}, '${item.phone_number}')">취소</button>`;
         }
 
         const card = document.createElement('div');
         card.className = 'history-card';
         card.innerHTML = `
-          <div>
-            <div class="history-car-tag">${item.car_number}</div>
-            <div class="history-user-info">${maskedName} | ${maskedPhone}</div>
-            <div class="history-time">${timeStr} 알림</div>
+          <div class="card-top">
+            <span class="card-time"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i>${timeStr}</span>
+            <span class="badge-status ${badgeClass}">${status}</span>
           </div>
-          <div class="history-status" style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <div class="dot ${dotClass}"></div>
-              <span>${item.status}</span>
+          
+          <div class="card-body">
+            <div>
+              <div class="info-label">차량번호</div>
+              <div class="info-val-car">${item.car_number || '-'}</div>
             </div>
-            <div>${actionHtml}</div>
+            <div>
+              <div class="info-label">운전자 성함</div>
+              <div class="info-val-user">${maskedName}</div>
+            </div>
+          </div>
+
+          <div class="card-bottom">
+            <div class="card-phone"><i class="fa-solid fa-phone" style="color: #94a3b8; margin-right: 4px;"></i>${maskedPhone}</div>
+            <div>${actionBtnHtml}</div>
           </div>
         `;
         container.appendChild(card);
