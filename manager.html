@@ -20,6 +20,43 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800" onclick="stopTitleFlash()">
 
+  <!-- 담당자 로그인 모달 (미로그인 상태 시 화면 상단에 뜸) -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+      <div class="text-center space-y-2">
+        <div class="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded mb-1">SHC</div>
+        <h2 class="text-xl font-bold text-slate-900">담당자 관제 시스템 접속</h2>
+        <p class="text-xs text-slate-500">관제 시스템 이용을 위해 로그인해 주세요.</p>
+      </div>
+
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">이메일 계정</label>
+          <input type="email" id="login-email" required placeholder="example@email.com" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">비밀번호</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
+        </div>
+
+        <!-- 로그인 상태 유지 체크박스 -->
+        <div class="flex items-center justify-between pt-1">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+            <span class="text-xs font-bold text-slate-600">로그인 상태 유지</span>
+          </label>
+        </div>
+
+        <button type="submit" id="login-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md mt-2">
+          로그인
+        </button>
+      </form>
+
+      <div id="login-error-msg" class="hidden text-xs text-rose-500 font-bold text-center bg-rose-50 p-3 rounded-xl border border-rose-100"></div>
+    </div>
+  </div>
+
   <!-- 상단 네비게이션 바 -->
   <nav class="bg-slate-900 text-white px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center shadow-lg gap-3">
     <div class="flex items-center gap-2 sm:gap-3">
@@ -30,7 +67,6 @@
     <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
       <div id="current-time" class="text-slate-400 font-mono hidden sm:block"></div>
       
-      <!-- 알림 권한 허용 및 설정 버튼 -->
       <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
         <i class="fa-solid fa-bell-slash"></i> <span class="hidden sm:inline">알림 권한 요청</span>
       </button>
@@ -43,19 +79,18 @@
         <i class="fa-solid fa-rotate-right"></i>
       </button>
 
-      <!-- 로그아웃 버튼 -->
       <button onclick="handleLogout()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
         <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">로그아웃</span>
       </button>
     </div>
   </nav>
 
-  <!-- 메인 컨텐츠 영역 (좌측 알림판 + 우측 메인관제) -->
+  <!-- 메인 컨텐츠 영역 -->
   <main class="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
 
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
 
-      <!-- 좌측 대형 실시간 입문 알림 대시보드 카드 -->
+      <!-- 좌측 대형 실시간 입문 알림 카드 -->
       <div class="lg:col-span-1 space-y-4">
         <div id="latest-car-card" class="bg-slate-900 text-white p-5 rounded-2xl border-2 border-slate-700 shadow-md transition-all duration-300 relative overflow-hidden">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
@@ -85,7 +120,7 @@
         </div>
       </div>
 
-      <!-- 우측 관제 본문 (현황 요약 + 검색/필터 + 목록) -->
+      <!-- 우측 관제 본문 -->
       <div class="lg:col-span-3 space-y-4 sm:space-y-6">
 
         <!-- 현황 요약 카드 -->
@@ -120,7 +155,7 @@
           </div>
         </div>
 
-        <!-- 검색, 필터 및 버튼 컨트롤 -->
+        <!-- 검색 및 컨트롤 -->
         <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
           <div class="relative w-full sm:w-80">
             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
@@ -148,7 +183,7 @@
           </div>
         </div>
 
-        <!-- 모바일 전용: 전체 선택 제어 바 -->
+        <!-- 모바일 전용 전체 선택 바 -->
         <div class="block md:hidden bg-slate-200/70 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold text-slate-700">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="mobile-select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
@@ -157,7 +192,7 @@
           <span class="text-slate-500 font-normal">목록 터치 시 전체 정보 확인</span>
         </div>
 
-        <!-- 입문 데이터 영역 (PC: 테이블 / 모바일: 카드 레이아웃) -->
+        <!-- 데이터 목록 (PC/모바일) -->
         <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
@@ -183,9 +218,7 @@
           </div>
         </div>
 
-        <div id="mobile-card-list" class="block md:hidden space-y-3">
-          <!-- 모바일 카드 렌더링 -->
-        </div>
+        <div id="mobile-card-list" class="block md:hidden space-y-3"></div>
 
       </div>
     </div>
@@ -196,14 +229,7 @@
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
     
-    // 세션 지속성을 활성화하여 로그인 유지 기능(localStorage/sessionStorage)과 완벽 연동
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true
-      }
-    });
-
+    let _supabase = null;
     let allRecords = [];
     let currentStatusFilter = 'ALL';
     let isSoundOn = true;
@@ -212,43 +238,94 @@
     let notificationQueue = [];
 
     window.onload = async () => {
-      const { data: { session } } = await _supabase.auth.getSession();
-      if (!session) {
-        alert("보안을 위해 로그인이 필요합니다.");
-        window.location.href = 'index.html';
-        return;
-      }
+      // Supabase 클라이언트 초기화
+      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true }
+      });
 
       document.getElementById('date-filter').valueAsDate = new Date();
       updateClock();
       setInterval(updateClock, 1000);
+
+      // 세션 확인 후 모달 처리
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (session) {
+        hideLoginModal();
+        initSystem();
+      } else {
+        showLoginModal();
+      }
+    };
+
+    function showLoginModal() {
+      document.getElementById('login-modal').classList.remove('hidden');
+    }
+
+    function hideLoginModal() {
+      document.getElementById('login-modal').classList.add('hidden');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
+      const errorMsg = document.getElementById('login-error-msg');
+      const submitBtn = document.getElementById('login-submit-btn');
+
+      errorMsg.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.innerText = '로그인 중...';
+
+      // '로그인 상태 유지' 선택 시 localStorage, 미선택 시 sessionStorage
+      const storageType = rememberMe ? window.localStorage : window.sessionStorage;
+
+      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: {
+          storage: storageType,
+          persistSession: true,
+          autoRefreshToken: true
+        }
+      });
+
+      const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errorMsg.innerText = '로그인 실패: 이메일 또는 비밀번호를 확인해 주세요.';
+        errorMsg.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.innerText = '로그인';
+      } else {
+        hideLoginModal();
+        initSystem();
+      }
+    }
+
+    function initSystem() {
       checkNotificationStatus();
       fetchData();
       subscribeRealtime();
-    };
+    }
 
-    async function enableNotificationsAndSound() {
+    function enableNotificationsAndSound() {
       if ('speechSynthesis' in window) {
         const testUtterance = new SpeechSynthesisUtterance('');
         window.speechSynthesis.speak(testUtterance);
       }
 
       if ("Notification" in window) {
-        const permission = await Notification.requestPermission();
-        checkNotificationStatus();
-        if (permission === "granted") {
-          const testNoti = new Notification("알림이 활성화되었습니다", { 
-            body: "신규 차량 입문 시 백그라운드에서도 화면 알림이 발송됩니다.",
-            icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
-          });
-          
-          testNoti.onclick = (e) => {
-            e.preventDefault();
-            window.focus();
-          };
-        } else {
-          alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽 자물쇠 아이콘에서 알림을 허용해 주세요.");
-        }
+        Notification.requestPermission().then(permission => {
+          checkNotificationStatus();
+          if (permission === "granted") {
+            const testNoti = new Notification("알림이 활성화되었습니다", { 
+              body: "신규 차량 입문 시 백그라운드에서도 알림을 발송합니다.",
+              icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
+            });
+            testNoti.onclick = (e) => { e.preventDefault(); window.focus(); };
+          } else {
+            alert("알림 권한이 거부되었습니다.");
+          }
+        });
       }
     }
 
@@ -264,8 +341,7 @@
     }
 
     function updateClock() {
-      const now = new Date();
-      document.getElementById('current-time').innerText = now.toLocaleString('ko-KR');
+      document.getElementById('current-time').innerText = new Date().toLocaleString('ko-KR');
     }
 
     function toggleSound() {
@@ -282,6 +358,7 @@
     }
 
     async function fetchData() {
+      if (!_supabase) return;
       const selectedDate = document.getElementById('date-filter').value;
       const start = `${selectedDate}T00:00:00`;
       const end = `${selectedDate}T23:59:59`;
@@ -295,8 +372,6 @@
 
       if (error) {
         console.error('Fetch error:', error);
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-medium">데이터 불러오기 실패: ${error.message}</td></tr>`;
-        document.getElementById('mobile-card-list').innerHTML = `<div class="p-6 bg-white rounded-2xl text-center text-rose-500 font-medium">데이터 불러오기 실패</div>`;
         return;
       }
 
@@ -305,9 +380,10 @@
     }
 
     function subscribeRealtime() {
+      if (!_supabase) return;
       const statusBadge = document.getElementById('realtime-status');
 
-      const channel = _supabase
+      _supabase
         .channel('public:dock_control')
         .on(
           'postgres_changes',
@@ -327,7 +403,7 @@
           if (status === 'SUBSCRIBED') {
             statusBadge.innerText = '실시간 연결됨';
             statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 font-medium';
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          } else {
             statusBadge.innerText = '실시간 재연결 중';
             statusBadge.className = 'bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full border border-rose-500/30 font-medium';
           }
@@ -344,9 +420,7 @@
       document.getElementById('latest-phone-number').innerText = carData.phone_number || '-';
 
       card.classList.add('flash-alert');
-      setTimeout(() => {
-        card.classList.remove('flash-alert');
-      }, 5000);
+      setTimeout(() => { card.classList.remove('flash-alert'); }, 5000);
     }
 
     function playNotificationSound() {
@@ -355,8 +429,6 @@
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance('차량이 입문 했습니다');
         utterance.lang = 'ko-KR';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -364,26 +436,18 @@
     function showDesktopNotification(carData) {
       if ("Notification" in window && Notification.permission === "granted") {
         if (notificationQueue.length >= 3) {
-          const oldestNotification = notificationQueue.shift();
-          try { oldestNotification.close(); } catch(e) {}
+          const oldest = notificationQueue.shift();
+          try { oldest.close(); } catch(e) {}
         }
 
-        const title = `🚨 [신규 차량 입문] ${carData.car_number || '차량'}`;
-        const options = {
+        const noti = new Notification(`🚨 [신규 입문] ${carData.car_number || '차량'}`, {
           body: `운전자: ${carData.driver_name || '미기재'} | 연락처: ${carData.phone_number || '미기재'}`,
           icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
-          tag: 'shc-dock-' + Date.now(),
           requireInteraction: true
-        };
+        });
 
-        const newNoti = new Notification(title, options);
-        
-        newNoti.onclick = (event) => {
-          event.preventDefault();
-          window.focus();
-        };
-
-        notificationQueue.push(newNoti);
+        noti.onclick = (e) => { e.preventDefault(); window.focus(); };
+        notificationQueue.push(noti);
       }
     }
 
@@ -408,11 +472,6 @@
       const tbody = document.getElementById('table-body');
       const mobileList = document.getElementById('mobile-card-list');
       const query = document.getElementById('search-input').value.toLowerCase();
-      
-      const selectAllCb = document.getElementById('select-all-checkbox');
-      const mobileSelectAllCb = document.getElementById('mobile-select-all-checkbox');
-      if(selectAllCb) selectAllCb.checked = false;
-      if(mobileSelectAllCb) mobileSelectAllCb.checked = false;
 
       let filtered = allRecords.filter(item => {
         const matchesStatus = currentStatusFilter === 'ALL' || item.status === currentStatusFilter;
@@ -433,7 +492,7 @@
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</td></tr>`;
-        mobileList.innerHTML = `<div class="p-8 bg-white rounded-2xl border border-slate-200/80 text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</div>`;
+        mobileList.innerHTML = `<div class="p-8 bg-white rounded-2xl border text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</div>`;
         return;
       }
 
@@ -513,11 +572,6 @@
     function toggleSelectAll(master) {
       const checkboxes = document.querySelectorAll('.row-checkbox');
       checkboxes.forEach(cb => cb.checked = master.checked);
-      
-      const selectAllCb = document.getElementById('select-all-checkbox');
-      const mobileSelectAllCb = document.getElementById('mobile-select-all-checkbox');
-      if(selectAllCb) selectAllCb.checked = master.checked;
-      if(mobileSelectAllCb) mobileSelectAllCb.checked = master.checked;
     }
 
     async function deleteSelectedRecords() {
@@ -527,31 +581,17 @@
         return;
       }
 
-      if (!confirm(`선택한 ${checkedBoxes.length}건의 데이터를 삭제하시겠습니까?\n삭제 후에는 상단 통계 항목에서도 차감됩니다.`)) {
-        return;
-      }
+      if (!confirm(`선택한 ${checkedBoxes.length}건의 데이터를 삭제하시겠습니까?`)) return;
 
       const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+      const { error } = await _supabase.from('dock_control').delete().in('id', selectedIds);
 
-      const { error } = await _supabase
-        .from('dock_control')
-        .delete()
-        .in('id', selectedIds);
-
-      if (error) {
-        alert('삭제 실패: ' + error.message);
-      } else {
-        alert('선택한 내역이 성공적으로 삭제되었습니다.');
-        fetchData();
-      }
+      if (error) alert('삭제 실패: ' + error.message);
+      else fetchData();
     }
 
     async function updateStatus(id, newStatus) {
-      const { error } = await _supabase
-        .from('dock_control')
-        .update({ status: newStatus })
-        .eq('id', id);
-
+      const { error } = await _supabase.from('dock_control').update({ status: newStatus }).eq('id', id);
       if (error) alert('상태 변경 실패: ' + error.message);
       else fetchData();
     }
@@ -576,7 +616,7 @@
         try { await _supabase.auth.signOut(); } catch (e) {}
         sessionStorage.clear();
         localStorage.clear();
-        window.location.href = 'index.html';
+        showLoginModal();
       }
     }
 
