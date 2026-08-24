@@ -8,6 +8,15 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 15px rgba(225, 29, 72, 0.4); }
+      50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 0px rgba(225, 29, 72, 0); }
+    }
+    .flash-alert {
+      animation: pulse-border 1.5s infinite;
+    }
+  </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800" onclick="stopTitleFlash()">
 
@@ -41,108 +50,144 @@
     </div>
   </nav>
 
-  <!-- 메인 컨텐츠 영역 -->
+  <!-- 메인 컨텐츠 영역 (좌측 알림판 + 우측 메인관제) -->
   <main class="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
 
-    <!-- 현황 요약 카드 -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase">금일 총 입문</p>
-          <p id="stat-total" class="text-xl sm:text-2xl font-black text-slate-800 mt-1">0</p>
-        </div>
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-truck"></i></div>
-      </div>
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase">구역 내 대기중</p>
-          <p id="stat-waiting" class="text-xl sm:text-2xl font-black text-amber-600 mt-1">0</p>
-        </div>
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-clock"></i></div>
-      </div>
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase">출차 완료</p>
-          <p id="stat-completed" class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">0</p>
-        </div>
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-check"></i></div>
-      </div>
-      <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-        <div>
-          <p class="text-xs font-bold text-slate-400 uppercase">입문 취소</p>
-          <p id="stat-cancelled" class="text-xl sm:text-2xl font-black text-rose-600 mt-1">0</p>
-        </div>
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-ban"></i></div>
-      </div>
-    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
 
-    <!-- 검색, 필터 및 버튼 컨트롤 -->
-    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
-      <div class="relative w-full sm:w-80">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
-      </div>
-      
-      <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-        <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-          <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white transition">전체</button>
-          <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
-          <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
+      <!-- 좌측 대형 실시간 입문 알림 대시보드 카드 -->
+      <div class="lg:col-span-1 space-y-4">
+        <div id="latest-car-card" class="bg-slate-900 text-white p-5 rounded-2xl border-2 border-slate-700 shadow-md transition-all duration-300 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> 최근 입문 차량
+            </span>
+            <span id="latest-car-time" class="text-xs font-mono text-slate-400">-</span>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <p class="text-xs text-slate-400 font-medium">차량 번호</p>
+              <p id="latest-car-number" class="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight mt-0.5">입문 대기중</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+              <div>
+                <p class="text-xs text-slate-400 font-medium">운전자 성함</p>
+                <p id="latest-driver-name" class="text-base font-bold text-slate-200 mt-0.5">-</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 font-medium">연락처</p>
+                <p id="latest-phone-number" class="text-xs font-mono text-slate-300 mt-1">-</p>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none">
-        
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0">
-          <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-            <i class="fa-solid fa-trash-can"></i> 선택 삭제
-          </button>
+      </div>
 
-          <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-            <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
-          </button>
+      <!-- 우측 관제 본문 (현황 요약 + 검색/필터 + 목록) -->
+      <div class="lg:col-span-3 space-y-4 sm:space-y-6">
+
+        <!-- 현황 요약 카드 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">금일 총 입문</p>
+              <p id="stat-total" class="text-xl sm:text-2xl font-black text-slate-800 mt-1">0</p>
+            </div>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-truck"></i></div>
+          </div>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">구역 내 대기중</p>
+              <p id="stat-waiting" class="text-xl sm:text-2xl font-black text-amber-600 mt-1">0</p>
+            </div>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-clock"></i></div>
+          </div>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">출차 완료</p>
+              <p id="stat-completed" class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">0</p>
+            </div>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-check"></i></div>
+          </div>
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+            <div>
+              <p class="text-xs font-bold text-slate-400 uppercase">입문 취소</p>
+              <p id="stat-cancelled" class="text-xl sm:text-2xl font-black text-rose-600 mt-1">0</p>
+            </div>
+            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-ban"></i></div>
+          </div>
         </div>
+
+        <!-- 검색, 필터 및 버튼 컨트롤 -->
+        <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
+          <div class="relative w-full sm:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
+          </div>
+          
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
+              <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white transition">전체</button>
+              <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
+              <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
+            </div>
+            
+            <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none">
+            
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0">
+              <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-trash-can"></i> 선택 삭제
+              </button>
+
+              <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 모바일 전용: 전체 선택 제어 바 -->
+        <div class="block md:hidden bg-slate-200/70 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold text-slate-700">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="mobile-select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+            <span>전체 선택</span>
+          </label>
+          <span class="text-slate-500 font-normal">목록 터치 시 전체 정보 확인</span>
+        </div>
+
+        <!-- 입문 데이터 영역 (PC: 테이블 / 모바일: 카드 레이아웃) -->
+        <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 text-slate-400 font-semibold text-xs border-b border-slate-100 uppercase">
+                <tr>
+                  <th class="p-4 w-12 text-center">
+                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
+                  </th>
+                  <th class="p-4">입문일시</th>
+                  <th class="p-4">차량번호</th>
+                  <th class="p-4">운전자 성함</th>
+                  <th class="p-4">연락처</th>
+                  <th class="p-4">상태</th>
+                  <th class="p-4 text-center">관리</th>
+                </tr>
+              </thead>
+              <tbody id="table-body" class="divide-y divide-slate-100">
+                <tr>
+                  <td colspan="7" class="p-8 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="mobile-card-list" class="block md:hidden space-y-3">
+          <!-- 모바일 카드 렌더링 -->
+        </div>
+
       </div>
-    </div>
-
-    <!-- 모바일 전용: 전체 선택 제어 바 -->
-    <div class="block md:hidden bg-slate-200/70 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold text-slate-700">
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="checkbox" id="mobile-select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-        <span>전체 선택</span>
-      </label>
-      <span class="text-slate-500 font-normal">목록 터치 시 전체 정보 확인</span>
-    </div>
-
-    <!-- 입문 데이터 영역 (PC: 테이블 / 모바일: 카드 레이아웃) -->
-    <!-- 1) PC 및 태블릿 화면 (md 이상) -->
-    <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-          <thead class="bg-slate-50 text-slate-400 font-semibold text-xs border-b border-slate-100 uppercase">
-            <tr>
-              <th class="p-4 w-12 text-center">
-                <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-              </th>
-              <th class="p-4">입문일시</th>
-              <th class="p-4">차량번호</th>
-              <th class="p-4">운전자 성함</th>
-              <th class="p-4">연락처</th>
-              <th class="p-4">상태</th>
-              <th class="p-4 text-center">관리</th>
-            </tr>
-          </thead>
-          <tbody id="table-body" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="7" class="p-8 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 2) 모바일 화면 (md 미만 카드 리스트) -->
-    <div id="mobile-card-list" class="block md:hidden space-y-3">
-      <!-- 렌더링 시 모바일 카드가 들어갑니다 -->
     </div>
 
   </main>
@@ -151,7 +196,13 @@
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
     
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 세션 지속성을 활성화하여 로그인 유지 기능(localStorage/sessionStorage)과 완벽 연동
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true
+      }
+    });
 
     let allRecords = [];
     let currentStatusFilter = 'ALL';
@@ -160,7 +211,14 @@
     let titleInterval = null;
     let notificationQueue = [];
 
-    window.onload = () => {
+    window.onload = async () => {
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) {
+        alert("보안을 위해 로그인이 필요합니다.");
+        window.location.href = 'index.html';
+        return;
+      }
+
       document.getElementById('date-filter').valueAsDate = new Date();
       updateClock();
       setInterval(updateClock, 1000);
@@ -170,7 +228,6 @@
     };
 
     async function enableNotificationsAndSound() {
-      // 음성 안내 기능 잠금 해제
       if ('speechSynthesis' in window) {
         const testUtterance = new SpeechSynthesisUtterance('');
         window.speechSynthesis.speak(testUtterance);
@@ -181,7 +238,7 @@
         checkNotificationStatus();
         if (permission === "granted") {
           const testNoti = new Notification("알림이 활성화되었습니다", { 
-            body: "신규 차량 입문 시 음성 안내 및 윈도우 알림이 정상 발송됩니다.",
+            body: "신규 차량 입문 시 백그라운드에서도 화면 알림이 발송됩니다.",
             icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
           });
           
@@ -190,7 +247,7 @@
             window.focus();
           };
         } else {
-          alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽의 자물쇠 아이콘을 눌러 [알림]을 허용으로 바꿔주세요.");
+          alert("알림 권한이 거부되었습니다. 브라우저 주소창 왼쪽 자물쇠 아이콘에서 알림을 허용해 주세요.");
         }
       }
     }
@@ -261,6 +318,7 @@
               playNotificationSound();
               showDesktopNotification(newCar);
               startTitleFlash();
+              updateLatestCarCard(newCar);
             }
             fetchData();
           }
@@ -274,6 +332,21 @@
             statusBadge.className = 'bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full border border-rose-500/30 font-medium';
           }
         });
+    }
+
+    function updateLatestCarCard(carData) {
+      const card = document.getElementById('latest-car-card');
+      const timeStr = new Date(carData.created_at || Date.now()).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      
+      document.getElementById('latest-car-time').innerText = timeStr;
+      document.getElementById('latest-car-number').innerText = carData.car_number || '-';
+      document.getElementById('latest-driver-name').innerText = carData.driver_name || '-';
+      document.getElementById('latest-phone-number').innerText = carData.phone_number || '-';
+
+      card.classList.add('flash-alert');
+      setTimeout(() => {
+        card.classList.remove('flash-alert');
+      }, 5000);
     }
 
     function playNotificationSound() {
@@ -305,12 +378,9 @@
 
         const newNoti = new Notification(title, options);
         
-        // [수정 포인트] 알림 센터에서 클릭 시 404 루트 이동을 차단하고 현재 관제 페이지 포커스
         newNoti.onclick = (event) => {
-          event.preventDefault(); // 도메인 루트로 자동 이동하는 브라우저 기본 동작 차단
+          event.preventDefault();
           window.focus();
-          // 현재 페이지 경로 재요청으로 안전하게 화면 이동
-          window.location.href = window.location.href.split('#')[0]; 
         };
 
         notificationQueue.push(newNoti);
@@ -351,6 +421,10 @@
                               (item.phone_number && item.phone_number.toLowerCase().includes(query));
         return matchesStatus && matchesSearch;
       });
+
+      if (allRecords.length > 0) {
+        updateLatestCarCard(allRecords[0]);
+      }
 
       document.getElementById('stat-total').innerText = allRecords.length;
       document.getElementById('stat-waiting').innerText = allRecords.filter(i => i.status === '대기중' || !i.status).length;
