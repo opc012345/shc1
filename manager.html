@@ -89,6 +89,12 @@
           <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
         </div>
         <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none">
+        
+        <!-- [추가] 선택 삭제 버튼 -->
+        <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-trash-can"></i> 선택 삭제
+        </button>
+
         <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
         </button>
@@ -101,6 +107,10 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-400 font-semibold text-xs border-b border-slate-100 uppercase">
             <tr>
+              <!-- [추가] 전체 선택 체크박스 -->
+              <th class="p-4 w-12 text-center">
+                <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
+              </th>
               <th class="p-4">입문일시</th>
               <th class="p-4">차량번호</th>
               <th class="p-4">운전자 성함</th>
@@ -111,7 +121,7 @@
           </thead>
           <tbody id="table-body" class="divide-y divide-slate-100">
             <tr>
-              <td colspan="6" class="p-8 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
+              <td colspan="7" class="p-8 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
             </tr>
           </tbody>
         </table>
@@ -216,7 +226,7 @@
 
       if (error) {
         console.error('Fetch error:', error);
-        document.getElementById('table-body').innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-500 font-medium">데이터 불러오기 실패: ${error.message}</td></tr>`;
+        document.getElementById('table-body').innerHTML = `<tr><td colspan="7" class="p-8 text-center text-rose-500 font-medium">데이터 불러오기 실패: ${error.message}</td></tr>`;
         return;
       }
 
@@ -315,6 +325,9 @@
     function renderData() {
       const tbody = document.getElementById('table-body');
       const query = document.getElementById('search-input').value.toLowerCase();
+      
+      const selectAllCb = document.getElementById('select-all-checkbox');
+      if(selectAllCb) selectAllCb.checked = false;
 
       let filtered = allRecords.filter(item => {
         const matchesStatus = currentStatusFilter === 'ALL' || item.status === currentStatusFilter;
@@ -330,7 +343,7 @@
       document.getElementById('stat-cancelled').innerText = allRecords.filter(i => i.status === '입문취소').length;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -344,6 +357,10 @@
 
         return `
           <tr class="hover:bg-slate-50 transition">
+            <!-- [추가] 행별 선택 체크박스 -->
+            <td class="p-4 text-center">
+              <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
+            </td>
             <td class="p-4 font-mono text-slate-600 font-medium">${timeStr}</td>
             <td class="p-4 font-bold text-slate-900">${item.car_number || '-'}</td>
             <td class="p-4 font-medium text-slate-700">${item.driver_name || '-'}</td>
@@ -358,6 +375,39 @@
           </tr>
         `;
       }).join('');
+    }
+
+    // [추가] 전체 선택/해제 토글 함수
+    function toggleSelectAll(master) {
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      checkboxes.forEach(cb => cb.checked = master.checked);
+    }
+
+    // [추가] 선택 항목 삭제 처리 함수
+    async function deleteSelectedRecords() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      if (checkedBoxes.length === 0) {
+        alert('삭제할 항목을 선택해 주세요.');
+        return;
+      }
+
+      if (!confirm(`선택한 ${checkedBoxes.length}건의 데이터를 삭제하시겠습니까?\n삭제 후에는 상단 통계 항목(입문 취소 등)에서도 차감됩니다.`)) {
+        return;
+      }
+
+      const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
+
+      const { error } = await _supabase
+        .from('dock_control')
+        .delete()
+        .in('id', selectedIds);
+
+      if (error) {
+        alert('삭제 실패: ' + error.message);
+      } else {
+        alert('선택한 내역이 성공적으로 삭제되었습니다.');
+        fetchData();
+      }
     }
 
     async function updateStatus(id, newStatus) {
