@@ -298,7 +298,7 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
-      // Supabase 데이터베이스 등록 (Webhook 또는 백엔드 트리거가 텔레그램을 즉시 발송합니다)
+      // 1. Supabase 데이터베이스 등록
       const { error } = await _supabase
         .from('dock_control')
         .insert([{ 
@@ -308,15 +308,40 @@
           status: '대기중'
         }]);
 
+      if (error) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 도착 알림 보내기';
+        alert('도착 알림 전송 중 오류가 발생했습니다: ' + error.message);
+        return;
+      }
+
+      // 2. DB 등록 성공 직후 텔레그램 API 직접 호출 (실패 위험 요소 제거)
+      const botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
+      const chatId = "-5175407977";
+      
+      const message = `🚨 <b>[신규 차량 입문]</b>\n\n` +
+                      `🚛 <b>차량번호:</b> ${carNumber}\n` +
+                      `👤 <b>운전기사:</b> ${driverName}\n` +
+                      `📞 <b>연락처:</b> ${phoneNumber}`;
+
+      try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: 'HTML'
+          })
+        });
+      } catch (tgError) {
+        console.error("텔레그램 전송 실패:", tgError);
+      }
+
       btn.disabled = false;
       btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 도착 알림 보내기';
-
-      if (error) {
-        alert('도착 알림 전송 중 오류가 발생했습니다: ' + error.message);
-      } else {
-        alert('차량 도착 알림이 정상적으로 전송되었습니다.');
-        loadMyStatus();
-      }
+      alert('차량 도착 알림이 정상적으로 전송되었습니다.');
+      loadMyStatus();
     });
 
     async function loadMyStatus() {
