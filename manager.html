@@ -112,7 +112,7 @@
         color: #64748b;
       }
 
-      /* 7. 관리 버튼 (하단 분리선 및 우측 정렬) */
+      /* 7. 관리 버튼 */
       tbody#table-body td:nth-child(7) {
         border-top: 1px solid #f1f5f9 !important;
         padding-top: 10px !important;
@@ -162,30 +162,36 @@
     </div>
   </div>
 
-  <!-- 상단 네비게이션 바 -->
-  <nav class="bg-slate-900 text-white px-6 py-4 flex flex-wrap justify-between items-center shadow-lg gap-4">
-    <div class="flex items-center gap-3">
-      <span class="bg-red-600 text-white font-black text-sm px-3 py-1 rounded">SHC</span>
-      <h1 class="text-2xl font-black tracking-tight">차량입문 관제 시스템</h1>
-      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-xs px-3 py-1 rounded-full border border-amber-500/30 font-medium">연결 중...</span>
+  <!-- 상단 네비게이션 바 (모바일 대응 최적화 수정본) -->
+  <nav class="bg-slate-900 text-white px-3 sm:px-6 py-3 flex justify-between items-center shadow-lg gap-2">
+    <!-- 좌측: 로고 및 타이틀 -->
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="bg-red-600 text-white font-black text-xs px-2 py-1 rounded">SHC</span>
+      <h1 class="text-base sm:text-2xl font-black tracking-tight whitespace-nowrap">차량입문 관제 시스템</h1>
+      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-500/30 font-medium whitespace-nowrap">연결 중...</span>
     </div>
-    <div class="flex items-center gap-4 text-sm font-semibold">
-      <div id="current-time" class="text-slate-300 font-mono text-base hidden md:block"></div>
+
+    <!-- 우측: 컨트롤 버튼 (모바일 아이콘 대응) -->
+    <div class="flex items-center gap-1.5 sm:gap-4 text-xs font-semibold shrink-0">
+      <div id="current-time" class="text-slate-300 font-mono text-base hidden lg:block"></div>
       
-      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
-        <i class="fa-solid fa-bell-slash"></i> <span>알림 권한 요청</span>
+      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
+        <i class="fa-solid fa-bell-slash"></i>
+        <span class="hidden md:inline">알림 권한 요청</span>
       </button>
 
-      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
-        <i class="fa-solid fa-volume-high"></i> <span id="sound-status-text">소리 On</span>
+      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
+        <i class="fa-solid fa-volume-high"></i>
+        <span id="sound-status-text" class="hidden md:inline">소리 On</span>
       </button>
 
-      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl transition" title="새로고침">
+      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 sm:p-2.5 rounded-xl transition" title="새로고침">
         <i class="fa-solid fa-rotate-right"></i>
       </button>
 
-      <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
-        <i class="fa-solid fa-right-from-bracket"></i> <span>로그아웃</span>
+      <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span class="hidden md:inline">로그아웃</span>
       </button>
     </div>
   </nav>
@@ -397,16 +403,17 @@
     function checkNotificationStatus() {
       const btn = document.getElementById('noti-permission-btn');
       if ("Notification" in window && Notification.permission === "granted") {
-        btn.className = "bg-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-default";
-        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i> <span>알림 권한 완료</span>`;
+        btn.className = "bg-slate-800 text-slate-300 p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-default";
+        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i> <span class="hidden md:inline">알림 권한 완료</span>`;
       } else {
-        btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 animate-pulse";
-        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> <span>알림 권한 필요</span>`;
+        btn.className = "bg-amber-600 hover:bg-amber-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 animate-pulse";
+        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> <span class="hidden md:inline">알림 권한 필요</span>`;
       }
     }
 
     function updateClock() {
-      document.getElementById('current-time').innerText = new Date().toLocaleString('ko-KR');
+      const el = document.getElementById('current-time');
+      if (el) el.innerText = new Date().toLocaleString('ko-KR');
     }
 
     function toggleSound() {
@@ -414,11 +421,11 @@
       const btnText = document.getElementById('sound-status-text');
       const btn = document.getElementById('sound-toggle-btn');
       if(isSoundOn) {
-        btnText.innerText = "소리 On";
-        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2";
+        if (btnText) btnText.innerText = "소리 On";
+        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5";
       } else {
-        btnText.innerText = "소리 Off";
-        btn.className = "bg-slate-600 hover:bg-slate-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2";
+        if (btnText) btnText.innerText = "소리 Off";
+        btn.className = "bg-slate-600 hover:bg-slate-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5";
       }
     }
 
@@ -466,10 +473,10 @@
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             statusBadge.innerText = '실시간 연결됨';
-            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/30 font-medium';
+            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-500/30 font-medium whitespace-nowrap';
           } else {
             statusBadge.innerText = '실시간 재연결 중';
-            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-xs px-3 py-1 rounded-full border border-rose-500/30 font-medium';
+            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-rose-500/30 font-medium whitespace-nowrap';
           }
         });
     }
@@ -489,7 +496,6 @@
         return;
       }
 
-      // 대기중인 차량 중 최신 입문순 3개 추출
       const top3Waiting = waitingList.slice(0, 3);
 
       container.innerHTML = top3Waiting.map((item, index) => {
@@ -583,10 +589,8 @@
       const tbody = document.getElementById('table-body');
       const query = document.getElementById('search-input').value.toLowerCase();
 
-      // 전체 대기중인 차량 추출 (최신순)
       const waitingList = allRecords.filter(i => (i.status || '대기중') === '대기중');
       
-      // 좌측 3개 대기 카드 렌더링
       updateWaitingCards(waitingList);
 
       let filtered = allRecords.filter(item => {
