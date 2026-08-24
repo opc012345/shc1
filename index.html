@@ -34,9 +34,17 @@
     .main-step { display: flex; align-items: flex-start; gap: 6px; }
     .step-num { color: #dc2626; flex-shrink: 0; }
     
-    .header-sub-list { font-size: 14px; color: #334155; line-height: 1.6; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #edf2f7; }
-    .list-item { display: flex; align-items: flex-start; gap: 6px; word-break: keep-all; }
-    .list-item span { flex-shrink: 0; }
+    /* 🔹 리스트 글맞춤 정밀 교정 (CSS Grid 적용) */
+    .header-sub-list { font-size: 14px; color: #334155; line-height: 1.5; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #edf2f7; }
+    .list-item { 
+      display: grid; 
+      grid-template-columns: 18px auto 1fr; 
+      align-items: start; 
+      gap: 2px; 
+    }
+    .list-item .icon { font-size: 12px; line-height: 1.6; }
+    .list-item .label { font-weight: 700; color: #1e293b; white-space: nowrap; margin-right: 4px; }
+    .list-item .desc { color: #334155; word-break: keep-all; font-weight: 500; }
 
     .header-sub-notice { font-size: 13px; color: #dc2626; line-height: 1.55; font-weight: 700; border-top: 1px dashed #cbd5e1; padding-top: 12px; word-break: keep-all; }
     .notice-item { margin-bottom: 6px; }
@@ -185,14 +193,17 @@
         <div class="main-step"><span class="step-num">2.</span> <span>지정된 장소에 주차 후 반드시 입문 등록을 해주세요.</span></div>
       </div>
       
+      <!-- 정밀 교정된 글 맞춤 영역 -->
       <div class="header-sub-list">
         <div class="list-item">
-          <span>🔹</span>
-          <div><strong>처음 방문:</strong> 대기장소 주차 후 입문 등록</div>
+          <span class="icon">🔹</span>
+          <span class="label">처음 방문:</span>
+          <span class="desc">대기장소 주차 후 입문 등록</span>
         </div>
         <div class="list-item">
-          <span>🔹</span>
-          <div><strong>고정 방문:</strong> 상하차장(또는 대기장소) 주차 후 입문 등록</div>
+          <span class="icon">🔹</span>
+          <span class="label">고정 방문:</span>
+          <span class="desc">상하차장(또는 대기장소) 주차 후 입문 등록</span>
         </div>
       </div>
 
