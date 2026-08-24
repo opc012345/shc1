@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @keyframes pulse-border {
-      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 15px rgba(225, 29, 72, 0.4); }
+      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 20px rgba(225, 29, 72, 0.5); }
       50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 0px rgba(225, 29, 72, 0); }
     }
     .flash-alert {
@@ -52,147 +52,145 @@
   </div>
 
   <!-- 상단 네비게이션 바 -->
-  <nav class="bg-slate-900 text-white px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center shadow-lg gap-3">
-    <div class="flex items-center gap-2 sm:gap-3">
-      <span class="bg-red-600 text-white font-black text-xs px-2 py-1 rounded">SHC</span>
-      <h1 class="text-lg sm:text-xl font-bold tracking-tight">차량입문 관제 시스템</h1>
-      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded-full border border-amber-500/30 font-medium">연결 중...</span>
+  <nav class="bg-slate-900 text-white px-6 py-4 flex flex-wrap justify-between items-center shadow-lg gap-4">
+    <div class="flex items-center gap-3">
+      <span class="bg-red-600 text-white font-black text-sm px-3 py-1 rounded">SHC</span>
+      <h1 class="text-2xl font-black tracking-tight">차량입문 관제 시스템</h1>
+      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-xs px-3 py-1 rounded-full border border-amber-500/30 font-medium">연결 중...</span>
     </div>
-    <div class="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-      <div id="current-time" class="text-slate-400 font-mono hidden sm:block"></div>
+    <div class="flex items-center gap-4 text-sm font-semibold">
+      <div id="current-time" class="text-slate-300 font-mono text-base hidden md:block"></div>
       
-      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
-        <i class="fa-solid fa-bell-slash"></i> <span class="hidden sm:inline">알림 권한 요청</span>
+      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
+        <i class="fa-solid fa-bell-slash"></i> <span>알림 권한 요청</span>
       </button>
 
-      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
+      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
         <i class="fa-solid fa-volume-high"></i> <span id="sound-status-text">소리 On</span>
       </button>
 
-      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg transition" title="새로고침">
+      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2.5 rounded-xl transition" title="새로고침">
         <i class="fa-solid fa-rotate-right"></i>
       </button>
 
-      <button onclick="handleLogout()" class="bg-rose-600/80 hover:bg-rose-600 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
-        <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">로그아웃</span>
+      <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2">
+        <i class="fa-solid fa-right-from-bracket"></i> <span>로그아웃</span>
       </button>
     </div>
   </nav>
 
-  <!-- 메인 컨텐츠 영역 -->
-  <main class="max-w-7xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
+  <!-- 메인 컨텐츠 영역 (화면 넓게 expansion) -->
+  <main class="w-full px-6 py-6 space-y-6">
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
       <!-- 좌측 대형 실시간 입문 알림 카드 -->
-      <div class="lg:col-span-1 space-y-4">
-        <div id="latest-car-card" class="bg-slate-900 text-white p-5 rounded-2xl border-2 border-slate-700 shadow-md transition-all duration-300 relative overflow-hidden">
-          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-            <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span> 최근 입문 차량
+      <div class="xl:col-span-1 space-y-4">
+        <div id="latest-car-card" class="bg-slate-900 text-white p-6 rounded-2xl border-2 border-slate-700 shadow-xl transition-all duration-300 relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <span class="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span> 최근 입문 차량
             </span>
             <span id="latest-car-time" class="text-xs font-mono text-slate-400">-</span>
           </div>
 
-          <div class="space-y-3">
+          <div class="space-y-4">
             <div>
               <p class="text-xs text-slate-400 font-medium">차량 번호</p>
-              <p id="latest-car-number" class="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight mt-0.5">입문 대기중</p>
+              <p id="latest-car-number" class="text-3xl xl:text-4xl font-black text-amber-400 tracking-tight mt-1">입문 대기중</p>
             </div>
             
-            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+            <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
               <div>
                 <p class="text-xs text-slate-400 font-medium">운전자 성함</p>
-                <p id="latest-driver-name" class="text-base font-bold text-slate-200 mt-0.5">-</p>
+                <p id="latest-driver-name" class="text-lg font-bold text-slate-100 mt-0.5">-</p>
               </div>
               <div>
                 <p class="text-xs text-slate-400 font-medium">연락처</p>
-                <p id="latest-phone-number" class="text-xs font-mono text-slate-300 mt-1">-</p>
+                <p id="latest-phone-number" class="text-sm font-mono text-slate-300 mt-1">-</p>
               </div>
+            </div>
+
+            <!-- 대기 상태 전용 태그 -->
+            <div id="latest-status-badge" class="pt-2 hidden">
+              <span class="inline-block w-full text-center py-2 bg-amber-500/20 text-amber-400 border border-amber-500/40 rounded-xl font-bold text-sm">
+                현재 대기중
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 우측 관제 본문 -->
-      <div class="lg:col-span-3 space-y-4 sm:space-y-6">
+      <!-- 우측 관제 본문 (넓게 4칸 차지) -->
+      <div class="xl:col-span-4 space-y-6">
 
-        <!-- 현황 요약 카드 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+        <!-- 현황 요약 카드 (큼직하게 확대) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase">금일 총 입문</p>
-              <p id="stat-total" class="text-xl sm:text-2xl font-black text-slate-800 mt-1">0</p>
+              <p id="stat-total" class="text-3xl font-black text-slate-900 mt-1">0</p>
             </div>
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-truck"></i></div>
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-truck"></i></div>
           </div>
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase">구역 내 대기중</p>
-              <p id="stat-waiting" class="text-xl sm:text-2xl font-black text-amber-600 mt-1">0</p>
+              <p id="stat-waiting" class="text-3xl font-black text-amber-600 mt-1">0</p>
             </div>
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-clock"></i></div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl"><i class="fa-solid fa-clock"></i></div>
           </div>
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase">출차 완료</p>
-              <p id="stat-completed" class="text-xl sm:text-2xl font-black text-emerald-600 mt-1">0</p>
+              <p id="stat-completed" class="text-3xl font-black text-emerald-600 mt-1">0</p>
             </div>
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-check"></i></div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="fa-solid fa-check"></i></div>
           </div>
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
             <div>
               <p class="text-xs font-bold text-slate-400 uppercase">입문 취소</p>
-              <p id="stat-cancelled" class="text-xl sm:text-2xl font-black text-rose-600 mt-1">0</p>
+              <p id="stat-cancelled" class="text-3xl font-black text-rose-600 mt-1">0</p>
             </div>
-            <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-base sm:text-lg"><i class="fa-solid fa-ban"></i></div>
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl"><i class="fa-solid fa-ban"></i></div>
           </div>
         </div>
 
-        <!-- 검색 및 컨트롤 -->
-        <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
-          <div class="relative w-full sm:w-80">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
+        <!-- 검색 및 컨트롤 영역 -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div class="relative w-full md:w-96">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+            <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
           </div>
           
-          <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            <div class="inline-flex bg-slate-100 p-1 rounded-xl text-xs font-bold">
-              <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white transition">전체</button>
-              <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
-              <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
+          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+            <div class="inline-flex bg-slate-100 p-1.5 rounded-xl text-xs font-bold">
+              <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-4 py-2 rounded-lg bg-slate-900 text-white transition">전체</button>
+              <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
+              <button onclick="setStatusFilter('출차완료')" id="filter-completed" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">출차완료</button>
             </div>
             
-            <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none">
+            <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none">
             
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-end mt-1 sm:mt-0">
-              <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+            <div class="flex items-center gap-2">
+              <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
                 <i class="fa-solid fa-trash-can"></i> 선택 삭제
               </button>
 
-              <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+              <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
                 <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 모바일 전용 전체 선택 바 -->
-        <div class="block md:hidden bg-slate-200/70 px-4 py-2.5 rounded-xl flex items-center justify-between text-xs font-bold text-slate-700">
-          <label class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" id="mobile-select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-            <span>전체 선택</span>
-          </label>
-          <span class="text-slate-500 font-normal">목록 터치 시 전체 정보 확인</span>
-        </div>
-
-        <!-- 데이터 목록 (PC/모바일) -->
-        <div class="hidden md:block bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <!-- 데이터 목록 (표 사이즈 확대) -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
-              <thead class="bg-slate-50 text-slate-400 font-semibold text-xs border-b border-slate-100 uppercase">
+            <table class="w-full text-left text-base">
+              <thead class="bg-slate-50 text-slate-500 font-bold text-xs uppercase border-b border-slate-200">
                 <tr>
-                  <th class="p-4 w-12 text-center">
+                  <th class="p-4 w-14 text-center">
                     <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
                   </th>
                   <th class="p-4">입문일시</th>
@@ -205,14 +203,12 @@
               </thead>
               <tbody id="table-body" class="divide-y divide-slate-100">
                 <tr>
-                  <td colspan="7" class="p-8 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
+                  <td colspan="7" class="p-10 text-center text-slate-400 font-medium">데이터를 불러오는 중입니다...</td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
-
-        <div id="mobile-card-list" class="block md:hidden space-y-3"></div>
 
       </div>
     </div>
@@ -223,8 +219,7 @@
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
     
-    // 담당자 관리용 비밀번호 설정 (원하시는 비밀번호로 변경하세요)
-    const MANAGER_PASSWORD = 'cnfgkxla@1';
+    const MANAGER_PASSWORD = 'manager1234';
 
     let _supabase = null;
     let allRecords = [];
@@ -241,7 +236,6 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      // 인증 상태 확인 (localStorage 또는 sessionStorage)
       const isAuthLocal = localStorage.getItem('shc_manager_auth') === 'true';
       const isAuthSession = sessionStorage.getItem('shc_manager_auth') === 'true';
 
@@ -322,11 +316,11 @@
     function checkNotificationStatus() {
       const btn = document.getElementById('noti-permission-btn');
       if ("Notification" in window && Notification.permission === "granted") {
-        btn.className = "bg-slate-800 text-slate-300 px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 cursor-default";
-        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i> <span class="hidden sm:inline">알림 권한 완료</span>`;
+        btn.className = "bg-slate-800 text-slate-300 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 cursor-default";
+        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i> <span>알림 권한 완료</span>`;
       } else {
-        btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-sm animate-pulse";
-        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> <span class="hidden sm:inline">알림 권한 필요</span>`;
+        btn.className = "bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 animate-pulse";
+        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> <span>알림 권한 필요</span>`;
       }
     }
 
@@ -340,10 +334,10 @@
       const btn = document.getElementById('sound-toggle-btn');
       if(isSoundOn) {
         btnText.innerText = "소리 On";
-        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5";
+        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2";
       } else {
         btnText.innerText = "소리 Off";
-        btn.className = "bg-slate-600 hover:bg-slate-500 text-white px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5";
+        btn.className = "bg-slate-600 hover:bg-slate-500 text-white px-3 py-2 rounded-xl transition flex items-center gap-2";
       }
     }
 
@@ -392,10 +386,10 @@
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
             statusBadge.innerText = '실시간 연결됨';
-            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full border border-emerald-500/30 font-medium';
+            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/30 font-medium';
           } else {
             statusBadge.innerText = '실시간 재연결 중';
-            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full border border-rose-500/30 font-medium';
+            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-xs px-3 py-1 rounded-full border border-rose-500/30 font-medium';
           }
         });
     }
@@ -408,6 +402,15 @@
       document.getElementById('latest-car-number').innerText = carData.car_number || '-';
       document.getElementById('latest-driver-name').innerText = carData.driver_name || '-';
       document.getElementById('latest-phone-number').innerText = carData.phone_number || '-';
+
+      const statusBadge = document.getElementById('latest-status-badge');
+      const currentStatus = carData.status || '대기중';
+
+      if (currentStatus === '대기중') {
+        statusBadge.classList.remove('hidden');
+      } else {
+        statusBadge.classList.add('hidden');
+      }
 
       card.classList.add('flash-alert');
       setTimeout(() => { card.classList.remove('flash-alert'); }, 5000);
@@ -460,7 +463,6 @@
 
     function renderData() {
       const tbody = document.getElementById('table-body');
-      const mobileList = document.getElementById('mobile-card-list');
       const query = document.getElementById('search-input').value.toLowerCase();
 
       let filtered = allRecords.filter(item => {
@@ -471,18 +473,19 @@
         return matchesStatus && matchesSearch;
       });
 
+      // 가장 최근 입문 차량 정보 업데이트
       if (allRecords.length > 0) {
-        updateLatestCarCard(allRecords[0]);
+        const latestWaiting = allRecords.find(i => (i.status || '대기중') === '대기중') || allRecords[0];
+        updateLatestCarCard(latestWaiting);
       }
 
       document.getElementById('stat-total').innerText = allRecords.length;
-      document.getElementById('stat-waiting').innerText = allRecords.filter(i => i.status === '대기중' || !i.status).length;
+      document.getElementById('stat-waiting').innerText = allRecords.filter(i => (i.status || '대기중') === '대기중').length;
       document.getElementById('stat-completed').innerText = allRecords.filter(i => i.status === '출차완료').length;
       document.getElementById('stat-cancelled').innerText = allRecords.filter(i => i.status === '입문취소').length;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</td></tr>`;
-        mobileList.innerHTML = `<div class="p-8 bg-white rounded-2xl border text-center text-slate-400 font-medium">조회된 데이터가 없습니다.</div>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">조회된 데이터가 없습니다.</td></tr>`;
         return;
       }
 
@@ -490,71 +493,27 @@
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const status = item.status || '대기중';
         
-        let statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">대기중</span>';
-        if(status === '출차완료') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">출차완료</span>';
-        if(status === '입문취소') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">입문취소</span>';
+        let statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">대기중</span>';
+        if(status === '출차완료') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">출차완료</span>';
+        if(status === '입문취소') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">입문취소</span>';
 
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-4 text-center">
               <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
             </td>
-            <td class="p-4 font-mono text-slate-600 font-medium">${timeStr}</td>
-            <td class="p-4 font-bold text-slate-900">${item.car_number || '-'}</td>
-            <td class="p-4 font-medium text-slate-700">${item.driver_name || '-'}</td>
-            <td class="p-4 text-slate-500 font-mono">${item.phone_number || '-'}</td>
+            <td class="p-4 font-mono text-slate-600 font-semibold text-base">${timeStr}</td>
+            <td class="p-4 font-black text-slate-900 text-lg">${item.car_number || '-'}</td>
+            <td class="p-4 font-bold text-slate-800 text-base">${item.driver_name || '-'}</td>
+            <td class="p-4 text-slate-600 font-mono text-base font-medium">${item.phone_number || '-'}</td>
             <td class="p-4">${statusBadge}</td>
             <td class="p-4 text-center">
               ${status === '대기중' ? `
-                <button onclick="updateStatus('${item.id}', '출차완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-bold transition">출차</button>
-                <button onclick="updateStatus('${item.id}', '입문취소')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold transition ml-1">취소</button>
-              ` : `<span class="text-xs text-slate-400 font-medium">처리완료</span>`}
+                <button onclick="updateStatus('${item.id}', '출차완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm">출차</button>
+                <button onclick="updateStatus('${item.id}', '입문취소')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition ml-1">취소</button>
+              ` : `<span class="text-xs text-slate-400 font-semibold">처리완료</span>`}
             </td>
           </tr>
-        `;
-      }).join('');
-
-      mobileList.innerHTML = filtered.map(item => {
-        const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const status = item.status || '대기중';
-        
-        let statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">대기중</span>';
-        if(status === '출차완료') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">출차완료</span>';
-        if(status === '입문취소') statusBadge = '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700">입문취소</span>';
-
-        return `
-          <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-                <span class="font-mono text-xs text-slate-500 font-medium"><i class="fa-regular fa-clock mr-1"></i>${timeStr}</span>
-              </div>
-              <div>${statusBadge}</div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2 text-sm pt-1">
-              <div>
-                <p class="text-[11px] font-bold text-slate-400">차량번호</p>
-                <p class="font-black text-slate-900 text-base mt-0.5">${item.car_number || '-'}</p>
-              </div>
-              <div>
-                <p class="text-[11px] font-bold text-slate-400">운전자 성함</p>
-                <p class="font-bold text-slate-800 text-base mt-0.5">${item.driver_name || '-'}</p>
-              </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-2 border-t border-slate-100">
-              <div class="text-xs text-slate-500 font-mono">
-                <i class="fa-solid fa-phone text-slate-400 mr-1"></i>${item.phone_number || '-'}
-              </div>
-              <div>
-                ${status === '대기중' ? `
-                  <button onclick="updateStatus('${item.id}', '출차완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">출차</button>
-                  <button onclick="updateStatus('${item.id}', '입문취소')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold transition ml-1">취소</button>
-                ` : `<span class="text-xs text-slate-400 font-medium">처리완료</span>`}
-              </div>
-            </div>
-          </div>
         `;
       }).join('');
     }
@@ -591,9 +550,9 @@
       ['all', 'waiting', 'completed'].forEach(s => {
         const btn = document.getElementById(`filter-${s}`);
         if ((s === 'all' && status === 'ALL') || (s === 'waiting' && status === '대기중') || (s === 'completed' && status === '출차완료')) {
-          btn.className = "px-2.5 py-1.5 rounded-lg bg-slate-900 text-white transition";
+          btn.className = "px-4 py-2 rounded-lg bg-slate-900 text-white transition";
         } else {
-          btn.className = "px-2.5 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition";
+          btn.className = "px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition";
         }
       });
       renderData();
