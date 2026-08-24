@@ -3,705 +3,419 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>차량 입출문 시스템 - 신흥정밀</title>
+  <title>🚛 [신흥정밀] 입문 관제 시스템 (담당자용)</title>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
-    @keyframes pulse-border {
-      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 20px rgba(225, 29, 72, 0.5); }
-      50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 0px rgba(225, 29, 72, 0); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    
+    /* [수정 1] 모바일 상단 끊김 방지를 위해 body 및 container padding 조정 */
+    body { background-color: #f8fafc; min-height: 100vh; padding: 10px 12px 24px 12px; }
+    
+    .container { max-width: 800px; margin: 0 auto; }
+
+    /* [수정 1] 헤더 상단 여백 정리 및 sticky 포지션 최적화 */
+    .admin-header {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #e2e8f0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
-    .flash-alert {
-      animation: pulse-border 1.5s infinite;
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .shc-logo {
+      background: #c81e2b; color: white; font-weight: 900; font-size: 14px;
+      font-style: italic; width: 40px; height: 40px; border-radius: 50%;
+      display: flex; justify-content: center; align-items: center; flex-shrink: 0;
     }
+    .admin-title { font-size: 18px; font-weight: 800; color: #0f172a; }
+    .admin-subtitle { font-size: 12px; color: #64748b; font-weight: 500; }
 
-    /* =========================================================
-       📱 모바일 환경(768px 이하) 반응형 카드 변환 레이아웃
-       ========================================================= */
-    @media (max-width: 768px) {
-      /* 테이블 기본 구조 해제 */
-      .overflow-x-auto { overflow-x: visible !important; }
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; } /* PC 테이블 헤더 숨김 */
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .btn-icon {
+      background: #f1f5f9; border: 1px solid #cbd5e1; color: #334155;
+      padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { background: #e2e8f0; }
 
-      tbody#table-body {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding: 12px;
-        background-color: #f8fafc;
-      }
+    /* 현황 요약 카드 */
+    .status-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .summary-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 12px 8px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    /* [수정 2] "구역 내 대기중" 텍스트 줄바꿈 방지 */
+    .summary-label { 
+      font-size: 12px; 
+      font-weight: 700; 
+      color: #64748b; 
+      margin-bottom: 4px; 
+      white-space: nowrap; 
+      word-break: keep-all; 
+    }
+    .summary-count { font-size: 20px; font-weight: 900; color: #0f172a; }
+    .summary-card.wait .summary-count { color: #d97706; }
+    .summary-card.done .summary-count { color: #059669; }
+    .summary-card.cancel .summary-count { color: #dc2626; }
 
-      /* tr을 독립된 하나의 카드로 변경 */
-      tbody#table-body tr {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 14px 16px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        position: relative;
-      }
+    /* 컨트롤 바 */
+    .action-bar {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .select-input {
+      padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+      font-size: 13px; font-weight: 600; outline: none; background: #ffffff;
+    }
+    .btn-group { display: flex; gap: 8px; }
+    .btn-excel { background: #10b981; color: white; border: none; }
+    .btn-excel:hover { background: #059669; }
+    .btn-delete { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+    .btn-delete:hover { background: #fca5a5; }
 
-      /* 각 셀(td)을 모바일 카드 내부 스타일로 재배치 */
-      tbody#table-body td {
-        padding: 0 !important;
-        border: none !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100% !important;
-        text-align: left !important;
-      }
+    /* 목록 영역 */
+    .list-container { display: flex; flex-direction: column; gap: 10px; }
+    
+    .card-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .card-item.status-done { background: #f8fafc; opacity: 0.8; }
+    .card-item.status-cancel { background: #fff5f5; opacity: 0.7; }
 
-      /* 1. 체크박스 영역 (최상단 행) */
-      tbody#table-body td:nth-child(1) {
-        border-bottom: 1px solid #f1f5f9 !important;
-        padding-bottom: 8px !important;
-        justify-content: flex-start;
-        gap: 8px;
-      }
-      tbody#table-body td:nth-child(1)::before {
-        content: "선택";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .card-header-left { display: flex; align-items: center; gap: 10px; }
+    .chk-item { width: 18px; height: 18px; cursor: pointer; accent-color: #dc2626; }
+    .time-text { font-family: monospace; font-size: 13px; color: #64748b; font-weight: 600; }
 
-      /* 2. 입문일시 */
-      tbody#table-body td:nth-child(2)::before {
-        content: "입문일시";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    .badge { padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+    .badge-wait { background-color: #fef3c7; color: #b45309; }
+    .badge-done { background-color: #d1fae5; color: #047857; }
+    .badge-cancel { background-color: #ffe4e6; color: #be123c; }
 
-      /* 3. 차량번호 */
-      tbody#table-body td:nth-child(3)::before {
-        content: "차량번호";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    .card-content { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 8px; align-items: center; }
+    .car-num { font-size: 17px; font-weight: 900; color: #0f172a; }
+    .driver-name { font-size: 14px; font-weight: 700; color: #334155; }
+    .phone-num { font-size: 13px; color: #0284c7; font-weight: 700; text-decoration: none; }
 
-      /* 4. 운전자 성함 */
-      tbody#table-body td:nth-child(4)::before {
-        content: "운전자 성함";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    .card-actions { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px dashed #f1f5f9; padding-top: 10px; }
+    .btn-act {
+      padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700;
+      border: none; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-out { background: #0f172a; color: white; }
+    .btn-out:hover { background: #1e293b; }
+    .btn-canc { background: #f1f5f9; color: #64748b; }
+    .btn-canc:hover { background: #e2e8f0; }
 
-      /* 5. 연락처 */
-      tbody#table-body td:nth-child(5)::before {
-        content: "연락처";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    .empty-msg { text-align: center; color: #64748b; font-size: 14px; padding: 40px 0; background: white; border-radius: 14px; border: 1px dashed #e2e8f0; }
 
-      /* 6. 상태 배지 */
-      tbody#table-body td:nth-child(6)::before {
-        content: "상태";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      /* 7. 관리 버튼 */
-      tbody#table-body td:nth-child(7) {
-        border-top: 1px solid #f1f5f9 !important;
-        padding-top: 10px !important;
-        margin-top: 4px;
-        justify-content: space-between;
-        gap: 6px;
-      }
-      tbody#table-body td:nth-child(7)::before {
-        content: "관리";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+    /* 비밀번호 인증 모달 */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center;
+      z-index: 9999; padding: 20px;
+    }
+    .modal-box {
+      background: #ffffff; width: 100%; max-width: 320px; border-radius: 16px;
+      padding: 24px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center;
+    }
+    .modal-title { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    .modal-sub { font-size: 12px; color: #64748b; margin-bottom: 16px; }
+    .modal-input {
+      width: 100%; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      font-size: 18px; text-align: center; letter-spacing: 4px; outline: none; margin-bottom: 16px;
+    }
+    .modal-input:focus { border-color: #dc2626; }
+    .btn-auth {
+      width: 100%; padding: 12px; background: #dc2626; color: white; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;
     }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800" onclick="stopTitleFlash()">
+<body>
 
-  <!-- 담당자 비밀번호 로그인 모달 -->
-  <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
-      <div class="text-center space-y-2">
-        <div class="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded mb-1">SHC</div>
-        <h2 class="text-xl font-bold text-slate-900">담당자 관제 시스템 접속</h2>
-        <p class="text-xs text-slate-500">접속 비밀번호를 입력해 주세요.</p>
-      </div>
-
-      <form onsubmit="handleLogin(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">비밀번호</label>
-          <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
-        </div>
-
-        <div class="flex items-center justify-between pt-1">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-            <span class="text-xs font-bold text-slate-600">로그인 상태 유지</span>
-          </label>
-        </div>
-
-        <button type="submit" id="login-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md mt-2">
-          로그인
-        </button>
-      </form>
-
-      <div id="login-error-msg" class="hidden text-xs text-rose-500 font-bold text-center bg-rose-50 p-3 rounded-xl border border-rose-100"></div>
+  <!-- 비밀번호 인증 모달 -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <div class="modal-title">담당자 인증</div>
+      <div class="modal-sub">관리자 비밀번호를 입력해 주세요.</div>
+      <input type="password" id="authPassword" class="modal-input" placeholder="****" onkeyup="if(event.keyCode===13) checkAuth()">
+      <button type="button" class="btn-auth" onclick="checkAuth()">접속하기</button>
     </div>
   </div>
 
-  <!-- 상단 네비게이션 바 (모바일 대응 최적화 수정본) -->
-  <nav class="bg-slate-900 text-white px-3 sm:px-6 py-3 flex justify-between items-center shadow-lg gap-2">
-    <!-- 좌측: 로고 및 타이틀 -->
-    <div class="flex items-center gap-2 shrink-0">
-      <span class="bg-red-600 text-white font-black text-xs px-2 py-1 rounded">SHC</span>
-      <h1 class="text-base sm:text-2xl font-black tracking-tight whitespace-nowrap">차량 입출문 시스템</h1>
-      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-500/30 font-medium whitespace-nowrap">연결 중...</span>
-    </div>
-
-    <!-- 우측: 컨트롤 버튼 (모바일 아이콘 대응) -->
-    <div class="flex items-center gap-1.5 sm:gap-4 text-xs font-semibold shrink-0">
-      <div id="current-time" class="text-slate-300 font-mono text-base hidden lg:block"></div>
-      
-      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
-        <i class="fa-solid fa-bell-slash"></i>
-        <span class="hidden md:inline">알림 권한 요청</span>
-      </button>
-
-      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
-        <i class="fa-solid fa-volume-high"></i>
-        <span id="sound-status-text" class="hidden md:inline">소리 On</span>
-      </button>
-
-      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 sm:p-2.5 rounded-xl transition" title="새로고침">
-        <i class="fa-solid fa-rotate-right"></i>
-      </button>
-
-      <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span class="hidden md:inline">로그아웃</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- 메인 컨텐츠 영역 -->
-  <main class="w-full px-6 py-6 space-y-6">
-
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-
-      <!-- 좌측 대기 차량 정보 카드 목록 (최대 3개 표시) -->
-      <div class="xl:col-span-1 space-y-4">
-        <div id="waiting-cards-container" class="space-y-4">
-          <!-- 스크립트에서 동적으로 대기 차량 카드 3개 생성 -->
+  <div class="container" id="adminMain" style="display: none;">
+    
+    <!-- 헤더 영역 -->
+    <div class="admin-header">
+      <div class="header-left">
+        <span class="shc-logo">SHC</span>
+        <div>
+          <div class="admin-title">입문 관제 시스템</div>
+          <div class="admin-subtitle" id="lastUpdated">최근 갱신: --:--:--</div>
         </div>
       </div>
-
-      <!-- 우측 관제 본문 -->
-      <div class="xl:col-span-4 space-y-6">
-
-        <!-- 현황 요약 카드 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase">금일 총 입문</p>
-              <p id="stat-total" class="text-3xl font-black text-slate-900 mt-1">0</p>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl"><i class="fa-solid fa-truck"></i></div>
-          </div>
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase">구역 내 대기중</p>
-              <p id="stat-waiting" class="text-3xl font-black text-amber-600 mt-1">0</p>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl"><i class="fa-solid fa-clock"></i></div>
-          </div>
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase">출문 완료</p>
-              <p id="stat-completed" class="text-3xl font-black text-emerald-600 mt-1">0</p>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl"><i class="fa-solid fa-check"></i></div>
-          </div>
-          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase">입문 취소</p>
-              <p id="stat-cancelled" class="text-3xl font-black text-rose-600 mt-1">0</p>
-            </div>
-            <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl"><i class="fa-solid fa-ban"></i></div>
-          </div>
-        </div>
-
-        <!-- 검색 및 컨트롤 영역 -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div class="relative w-full md:w-96">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
-            <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
-          </div>
-          
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <div class="inline-flex bg-slate-100 p-1.5 rounded-xl text-xs font-bold">
-              <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-4 py-2 rounded-lg bg-slate-900 text-white transition">전체</button>
-              <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
-              <button onclick="setStatusFilter('출문완료')" id="filter-completed" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">출문완료</button>
-            </div>
-            
-            <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none">
-            
-            <div class="flex items-center gap-2">
-              <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
-                <i class="fa-solid fa-trash-can"></i> 선택 삭제
-              </button>
-
-              <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
-                <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 데이터 목록 -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-base">
-              <thead class="bg-slate-50 text-slate-500 font-bold text-xs uppercase border-b border-slate-200">
-                <tr>
-                  <th class="p-4 w-14 text-center">
-                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-                  </th>
-                  <th class="p-4">입문일시</th>
-                  <th class="p-4">차량번호</th>
-                  <th class="p-4">운전자 성함</th>
-                  <th class="p-4">연락처</th>
-                  <th class="p-4">상태</th>
-                  <th class="p-4 text-center">관리</th>
-                </tr>
-              </thead>
-              <tbody id="table-body" class="divide-y divide-slate-100">
-                <tr>
-                  <td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">데이터를 불러오는 중입니다...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+      <div class="header-right">
+        <button class="btn-icon" onclick="fetchList()"><i class="fa-solid fa-rotate"></i> 새로고침</button>
       </div>
     </div>
 
-  </main>
+    <!-- [수정 2] 현황 카드 레이아웃 및 한 줄 표시 처리 -->
+    <div class="status-summary">
+      <div class="summary-card">
+        <div class="summary-label">전체 접수</div>
+        <div class="summary-count" id="cntTotal">0</div>
+      </div>
+      <div class="summary-card wait">
+        <div class="summary-label">구역 내 대기중</div>
+        <div class="summary-count" id="cntWait">0</div>
+      </div>
+      <div class="summary-card done">
+        <div class="summary-label">출차 완료</div>
+        <div class="summary-count" id="cntDone">0</div>
+      </div>
+      <div class="summary-card cancel">
+        <div class="summary-label">입문 취소</div>
+        <div class="summary-count" id="cntCancel">0</div>
+      </div>
+    </div>
+
+    <!-- 컨트롤 바 -->
+    <div class="action-bar">
+      <div class="filter-group">
+        <select id="statusFilter" class="select-input" onchange="filterData()">
+          <option value="ALL">전체 보기</option>
+          <option value="대기중" selected>대기 중인 차량만</option>
+          <option value="출차완료">출차 완료</option>
+          <option value="입문취소">입문 취소</option>
+        </select>
+      </div>
+      <div class="btn-group">
+        <button class="btn-icon btn-excel" onclick="downloadExcel()"><i class="fa-solid fa-file-excel"></i> 엑셀 저장</button>
+        <button class="btn-icon btn-delete" onclick="deleteSelected()"><i class="fa-solid fa-trash"></i> 선택 삭제</button>
+      </div>
+    </div>
+
+    <!-- 차량 목록 -->
+    <div class="list-container" id="listContainer">
+      <div class="empty-msg">데이터를 불러오는 중입니다...</div>
+    </div>
+
+  </div>
 
   <script>
-    const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
-    
-    const MANAGER_PASSWORD = 'cnfgkxla';
+    var MANAGER_PASSWORD = "1234"; // 관리자 비밀번호
+    var SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
+    var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let _supabase = null;
-    let allRecords = [];
-    let currentStatusFilter = 'ALL';
-    let isSoundOn = true;
-    let originalTitle = "차량 입출문 시스템 - 신흥정밀";
-    let titleInterval = null;
-    let notificationQueue = [];
+    var rawDataList = [];
 
-    window.onload = async () => {
-      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-      document.getElementById('date-filter').valueAsDate = new Date();
-      updateClock();
-      setInterval(updateClock, 1000);
-
-      const isAuthLocal = localStorage.getItem('shc_manager_auth') === 'true';
-      const isAuthSession = sessionStorage.getItem('shc_manager_auth') === 'true';
-
-      if (isAuthLocal || isAuthSession) {
-        hideLoginModal();
-        initSystem();
+    // 인증 체크
+    function checkAuth() {
+      var pwd = document.getElementById('authPassword').value;
+      if (pwd === MANAGER_PASSWORD) {
+        document.getElementById('authModal').style.display = 'none';
+        document.getElementById('adminMain').style.display = 'block';
+        fetchList();
+        setInterval(fetchList, 10000); // 10초마다 자동 갱신
       } else {
-        showLoginModal();
-      }
-    };
-
-    function showLoginModal() {
-      document.getElementById('login-modal').classList.remove('hidden');
-    }
-
-    function hideLoginModal() {
-      document.getElementById('login-modal').classList.add('hidden');
-    }
-
-    function handleLogin(e) {
-      e.preventDefault();
-      const passwordInput = document.getElementById('login-password').value;
-      const rememberMe = document.getElementById('remember-me').checked;
-      const errorMsg = document.getElementById('login-error-msg');
-
-      if (passwordInput === MANAGER_PASSWORD) {
-        if (rememberMe) {
-          localStorage.setItem('shc_manager_auth', 'true');
-        } else {
-          sessionStorage.setItem('shc_manager_auth', 'true');
-        }
-        errorMsg.classList.add('hidden');
-        hideLoginModal();
-        initSystem();
-      } else {
-        errorMsg.innerText = '비밀번호가 올바르지 않습니다.';
-        errorMsg.classList.remove('hidden');
+        alert('비밀번호가 올바르지 않습니다.');
+        document.getElementById('authPassword').value = '';
       }
     }
 
-    function handleLogout() {
-      if (confirm('로그아웃 하시겠습니까?')) {
-        localStorage.removeItem('shc_manager_auth');
-        sessionStorage.removeItem('shc_manager_auth');
-        document.getElementById('login-password').value = '';
-        showLoginModal();
-      }
-    }
+    // 데이터 불러오기
+    async function fetchList() {
+      var todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
 
-    function initSystem() {
-      checkNotificationStatus();
-      fetchData();
-      subscribeRealtime();
-    }
-
-    function enableNotificationsAndSound() {
-      if ('speechSynthesis' in window) {
-        const testUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(testUtterance);
-      }
-
-      if ("Notification" in window) {
-        Notification.requestPermission().then(permission => {
-          checkNotificationStatus();
-          if (permission === "granted") {
-            const testNoti = new Notification("알림이 활성화되었습니다", { 
-              body: "신규 차량 입문 시 백그라운드에서도 알림을 발송합니다.",
-              icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
-            });
-            testNoti.onclick = (e) => { e.preventDefault(); window.focus(); };
-          } else {
-            alert("알림 권한이 거부되었습니다.");
-          }
-        });
-      }
-    }
-
-    function checkNotificationStatus() {
-      const btn = document.getElementById('noti-permission-btn');
-      if ("Notification" in window && Notification.permission === "granted") {
-        btn.className = "bg-slate-800 text-slate-300 p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-default";
-        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400"></i> <span class="hidden md:inline">알림 권한 완료</span>`;
-      } else {
-        btn.className = "bg-amber-600 hover:bg-amber-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 animate-pulse";
-        btn.innerHTML = `<i class="fa-solid fa-bell-slash"></i> <span class="hidden md:inline">알림 권한 필요</span>`;
-      }
-    }
-
-    function updateClock() {
-      const el = document.getElementById('current-time');
-      if (el) el.innerText = new Date().toLocaleString('ko-KR');
-    }
-
-    function toggleSound() {
-      isSoundOn = !isSoundOn;
-      const btnText = document.getElementById('sound-status-text');
-      const btn = document.getElementById('sound-toggle-btn');
-      if(isSoundOn) {
-        if (btnText) btnText.innerText = "소리 On";
-        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5";
-      } else {
-        if (btnText) btnText.innerText = "소리 Off";
-        btn.className = "bg-slate-600 hover:bg-slate-500 text-white p-2 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1.5";
-      }
-    }
-
-    async function fetchData() {
-      if (!_supabase) return;
-      const selectedDate = document.getElementById('date-filter').value;
-      const start = `${selectedDate}T00:00:00`;
-      const end = `${selectedDate}T23:59:59`;
-
-      const { data, error } = await _supabase
+      var res = await _supabase
         .from('dock_control')
         .select('*')
-        .gte('created_at', start)
-        .lte('created_at', end)
+        .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Fetch error:', error);
+      if (res.error) {
+        console.error("데이터 로드 오류:", res.error);
         return;
       }
 
-      allRecords = data || [];
-      renderData();
+      rawDataList = res.data || [];
+      updateSummary();
+      filterData();
+
+      var now = new Date();
+      document.getElementById('lastUpdated').innerText = "최근 갱신: " + now.toLocaleTimeString();
     }
 
-    function subscribeRealtime() {
-      if (!_supabase) return;
-      const statusBadge = document.getElementById('realtime-status');
+    // 요약 집계
+    function updateSummary() {
+      var total = rawDataList.length;
+      var wait = rawDataList.filter(d => (d.status || '대기중') === '대기중').length;
+      var done = rawDataList.filter(d => d.status === '출차완료').length;
+      var cancel = rawDataList.filter(d => d.status === '입문취소').length;
 
-      _supabase
-        .channel('public:dock_control')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'dock_control' },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              const newCar = payload.new;
-              playNotificationSound();
-              showDesktopNotification(newCar);
-              startTitleFlash();
-            }
-            fetchData();
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            statusBadge.innerText = '실시간 연결됨';
-            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-500/30 font-medium whitespace-nowrap';
-          } else {
-            statusBadge.innerText = '실시간 재연결 중';
-            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-rose-500/30 font-medium whitespace-nowrap';
-          }
-        });
+      document.getElementById('cntTotal').innerText = total;
+      document.getElementById('cntWait').innerText = wait;
+      document.getElementById('cntDone').innerText = done;
+      document.getElementById('cntCancel').innerText = cancel;
     }
 
-    function updateWaitingCards(waitingList) {
-      const container = document.getElementById('waiting-cards-container');
+    // 필터링 및 리스트 출력
+    function filterData() {
+      var filterVal = document.getElementById('statusFilter').value;
+      var list = rawDataList;
 
-      if (waitingList.length === 0) {
-        container.innerHTML = `
-          <div class="bg-slate-900 text-white p-6 rounded-2xl border-2 border-slate-800 shadow-xl text-center space-y-2">
-            <div class="w-10 h-10 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
-              <i class="fa-solid fa-truck-slash"></i>
-            </div>
-            <p class="text-sm font-bold text-slate-400">현재 대기 중인 차량이 없습니다.</p>
-          </div>
-        `;
+      if (filterVal !== 'ALL') {
+        list = rawDataList.filter(d => (d.status || '대기중') === filterVal);
+      }
+
+      renderList(list);
+    }
+
+    // 목록 화면 렌더링
+    function renderList(list) {
+      var container = document.getElementById('listContainer');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="empty-msg">해당 조건의 입문 등록 차량이 없습니다.</div>';
         return;
       }
 
-      const top3Waiting = waitingList.slice(0, 3);
+      container.innerHTML = '';
+      list.forEach(function(item) {
+        var dt = new Date(item.created_at);
+        var timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        var status = item.status || '대기중';
 
-      container.innerHTML = top3Waiting.map((item, index) => {
-        const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const isLatest = index === 0;
+        var badgeClass = 'badge-wait';
+        var cardClass = '';
+        if (status === '출차완료') { badgeClass = 'badge-done'; cardClass = 'status-done'; }
+        if (status === '입문취소') { badgeClass = 'badge-cancel'; cardClass = 'status-cancel'; }
 
-        return `
-          <div class="bg-slate-900 text-white p-5 rounded-2xl border-2 ${isLatest ? 'border-amber-500/80 flash-alert' : 'border-slate-800'} shadow-xl transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-              <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                ${isLatest ? '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>' : ''}
-                대기 차량 #${index + 1}
-              </span>
-              <span class="text-xs font-mono text-slate-400">${timeStr}</span>
-            </div>
+        var card = document.createElement('div');
+        card.className = 'card-item ' + cardClass;
+        card.innerHTML = 
+          '<div class="card-header">' +
+            '<div class="card-header-left">' +
+              '<input type="checkbox" class="chk-item" value="' + item.id + '">' +
+              '<span class="time-text"><i class="fa-regular fa-clock"></i> ' + timeStr + '</span>' +
+            '</div>' +
+            '<span class="badge ' + badgeClass + '">' + status + '</span>' +
+          '</div>' +
+          '<div class="card-content">' +
+            '<div class="car-num">' + (item.car_number || '-') + '</div>' +
+            '<div class="driver-name">' + (item.driver_name || '-') + '</div>' +
+            '<div><a href="tel:' + item.phone_number + '" class="phone-num"><i class="fa-solid fa-phone"></i> ' + (item.phone_number || '-') + '</a></div>' +
+          '</div>' +
+          '<div class="card-actions">' +
+            (status === '대기중' ? '<button class="btn-act btn-out" onclick="changeStatus(' + item.id + ', \'출차완료\')">출문 처리</button>' : '') +
+            (status !== '입문취소' ? '<button class="btn-act btn-canc" onclick="changeStatus(' + item.id + ', \'입문취소\')">취소 처리</button>' : '') +
+          '</div>';
 
-            <div class="space-y-3">
-              <div>
-                <p class="text-[11px] text-slate-400 font-medium">차량 번호</p>
-                <p class="text-2xl font-black text-amber-400 tracking-tight mt-0.5">${item.car_number || '-'}</p>
-              </div>
-              
-              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
-                <div>
-                  <p class="text-[11px] text-slate-400 font-medium">운전자 성함</p>
-                  <p class="text-sm font-bold text-slate-200 mt-0.5">${item.driver_name || '-'}</p>
-                </div>
-                <div>
-                  <p class="text-[11px] text-slate-400 font-medium">연락처</p>
-                  <p class="text-xs font-mono text-slate-300 mt-1">${item.phone_number || '-'}</p>
-                </div>
-              </div>
-
-              <div class="pt-1">
-                <button onclick="updateStatus('${item.id}', '출문완료')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg transition text-xs shadow-sm">
-                  <i class="fa-solid fa-check mr-1"></i> 바로 출문 처리
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function playNotificationSound() {
-      if (!isSoundOn) return;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance('차량이 입문 했습니다');
-        utterance.lang = 'ko-KR';
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
-    function showDesktopNotification(carData) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        if (notificationQueue.length >= 3) {
-          const oldest = notificationQueue.shift();
-          try { oldest.close(); } catch(e) {}
-        }
-
-        const noti = new Notification(`🚨 [신규 입문] ${carData.car_number || '차량'}`, {
-          body: `운전자: ${carData.driver_name || '미기재'} | 연락처: ${carData.phone_number || '미기재'}`,
-          icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
-          requireInteraction: true
-        });
-
-        noti.onclick = (e) => { e.preventDefault(); window.focus(); };
-        notificationQueue.push(noti);
-      }
-    }
-
-    function startTitleFlash() {
-      if (titleInterval) clearInterval(titleInterval);
-      let isAlt = false;
-      titleInterval = setInterval(() => {
-        document.title = isAlt ? originalTitle : "🚨 [신규 입문!] 확인 필요";
-        isAlt = !isAlt;
-      }, 1000);
-    }
-
-    function stopTitleFlash() {
-      if (titleInterval) {
-        clearInterval(titleInterval);
-        titleInterval = null;
-        document.title = originalTitle;
-      }
-    }
-
-    function renderData() {
-      const tbody = document.getElementById('table-body');
-      const query = document.getElementById('search-input').value.toLowerCase();
-
-      const waitingList = allRecords.filter(i => (i.status || '대기중') === '대기중');
-      
-      updateWaitingCards(waitingList);
-
-      let filtered = allRecords.filter(item => {
-        const matchesStatus = currentStatusFilter === 'ALL' || item.status === currentStatusFilter;
-        const matchesSearch = (item.car_number && item.car_number.toLowerCase().includes(query)) ||
-                              (item.driver_name && item.driver_name.toLowerCase().includes(query)) ||
-                              (item.phone_number && item.phone_number.toLowerCase().includes(query));
-        return matchesStatus && matchesSearch;
+        container.appendChild(card);
       });
+    }
 
-      document.getElementById('stat-total').innerText = allRecords.length;
-      document.getElementById('stat-waiting').innerText = waitingList.length;
-      document.getElementById('stat-completed').innerText = allRecords.filter(i => i.status === '출문완료').length;
-      document.getElementById('stat-cancelled').innerText = allRecords.filter(i => i.status === '입문취소').length;
+    // 상태 변경
+    async function changeStatus(id, newStatus) {
+      var res = await _supabase
+        .from('dock_control')
+        .update({ status: newStatus })
+        .eq('id', id);
 
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">조회된 데이터가 없습니다.</td></tr>`;
-        return;
+      if (res.error) {
+        alert('상태 변경 실패: ' + res.error.message);
+      } else {
+        fetchList();
       }
-
-      tbody.innerHTML = filtered.map(item => {
-        const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const status = item.status || '대기중';
-        
-        let statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">대기중</span>';
-        if(status === '출문완료') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">출문완료</span>';
-        if(status === '입문취소') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">입문취소</span>';
-
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-4 text-center">
-              <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-            </td>
-            <td class="p-4 font-mono text-slate-600 font-semibold text-base">${timeStr}</td>
-            <td class="p-4 font-black text-slate-900 text-lg">${item.car_number || '-'}</td>
-            <td class="p-4 font-bold text-slate-800 text-base">${item.driver_name || '-'}</td>
-            <td class="p-4 text-slate-600 font-mono text-base font-medium">${item.phone_number || '-'}</td>
-            <td class="p-4">${statusBadge}</td>
-            <td class="p-4 text-center">
-              ${status === '대기중' ? `
-                <button onclick="updateStatus('${item.id}', '출문완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm">출문</button>
-                <button onclick="updateStatus('${item.id}', '입문취소')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition ml-1">취소</button>
-              ` : `<span class="text-xs text-slate-400 font-semibold">처리완료</span>`}
-            </td>
-          </tr>
-        `;
-      }).join('');
     }
 
-    function toggleSelectAll(master) {
-      const checkboxes = document.querySelectorAll('.row-checkbox');
-      checkboxes.forEach(cb => cb.checked = master.checked);
-    }
-
-    async function deleteSelectedRecords() {
-      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
-      if (checkedBoxes.length === 0) {
+    // 선택 삭제
+    async function deleteSelected() {
+      var chks = document.querySelectorAll('.chk-item:checked');
+      if (chks.length === 0) {
         alert('삭제할 항목을 선택해 주세요.');
         return;
       }
 
-      if (!confirm(`선택한 ${checkedBoxes.length}건의 데이터를 삭제하시겠습니까?`)) return;
+      if (!confirm('선택한 ' + chks.length + '개 항목을 삭제하시겠습니까?')) return;
 
-      const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
-      const { error } = await _supabase.from('dock_control').delete().in('id', selectedIds);
+      var ids = Array.from(chks).map(c => parseInt(c.value));
+      var res = await _supabase
+        .from('dock_control')
+        .delete()
+        .in('id', ids);
 
-      if (error) alert('삭제 실패: ' + error.message);
-      else fetchData();
+      if (res.error) {
+        alert('삭제 실패: ' + res.error.message);
+      } else {
+        alert('삭제되었습니다.');
+        fetchList();
+      }
     }
 
-    async function updateStatus(id, newStatus) {
-      const { error } = await _supabase.from('dock_control').update({ status: newStatus }).eq('id', id);
-      if (error) alert('상태 변경 실패: ' + error.message);
-      else fetchData();
-    }
-
-    function setStatusFilter(status) {
-      currentStatusFilter = status;
-      ['all', 'waiting', 'completed'].forEach(s => {
-        const btn = document.getElementById(`filter-${s}`);
-        if ((s === 'all' && status === 'ALL') || (s === 'waiting' && status === '대기중') || (s === 'completed' && status === '출문완료')) {
-          btn.className = "px-4 py-2 rounded-lg bg-slate-900 text-white transition";
-        } else {
-          btn.className = "px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition";
-        }
-      });
-      renderData();
-    }
-
-    function filterData() { renderData(); }
-
+    // 엑셀 다운로드
     function downloadExcel() {
-      if(allRecords.length === 0) {
+      if (rawDataList.length === 0) {
         alert('다운로드할 데이터가 없습니다.');
         return;
       }
-      
-      const excelData = allRecords.map(item => ({
-        '입문일시': new Date(item.created_at).toLocaleString('ko-KR'),
-        '차량번호': item.car_number || '-',
-        '운전자 성함': item.driver_name || '-',
-        '연락처': item.phone_number || '-',
-        '상태': item.status || '대기중'
-      }));
 
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
+      var excelData = rawDataList.map(function(item) {
+        return {
+          "접수시간": new Date(item.created_at).toLocaleString(),
+          "차량번호": item.car_number,
+          "운전자": item.driver_name,
+          "연락처": item.phone_number,
+          "진행상태": item.status || '대기중'
+        };
+      });
+
+      var worksheet = XLSX.utils.json_to_sheet(excelData);
+      var workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "입문현황");
 
-      const selectedDate = document.getElementById('date-filter').value;
-      XLSX.writeFile(workbook, `차량입문현황_${selectedDate}.xlsx`);
+      var todayStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, "신흥정밀_입문현황_" + todayStr + ".xlsx");
     }
   </script>
 </body>
