@@ -160,7 +160,15 @@
     let titleInterval = null;
     let notificationQueue = [];
 
-    window.onload = () => {
+    window.onload = async () => {
+      // [수정 1] 로그인 인증 상태 세션 강제 검증
+      const { data: { session } } = await _supabase.auth.getSession();
+      if (!session) {
+        alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
+        window.location.href = 'index.html';
+        return;
+      }
+
       document.getElementById('date-filter').valueAsDate = new Date();
       updateClock();
       setInterval(updateClock, 1000);
@@ -182,7 +190,8 @@
         if (permission === "granted") {
           const testNoti = new Notification("알림이 활성화되었습니다", { 
             body: "신규 차량 입문 시 음성 안내 및 윈도우 알림이 정상 발송됩니다.",
-            icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
+            icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
+            requireInteraction: true
           });
           
           testNoti.onclick = (e) => {
@@ -288,6 +297,7 @@
       }
     }
 
+    // [수정 2] 절전모드 및 백그라운드 상태에서도 팝업창이 뜨도록 알림 보장 처리
     function showDesktopNotification(carData) {
       if ("Notification" in window && Notification.permission === "granted") {
         if (notificationQueue.length >= 3) {
@@ -300,20 +310,23 @@
           body: `운전자: ${carData.driver_name || '미기재'} | 연락처: ${carData.phone_number || '미기재'}`,
           icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
           tag: 'shc-dock-' + Date.now(),
-          requireInteraction: true
+          requireInteraction: true, // 사용자가 클릭할 때까지 윈도우 알림창을 닫지 않고 계속 유지
+          silent: false
         };
 
-        const newNoti = new Notification(title, options);
-        
-        // [수정 포인트] 알림 센터에서 클릭 시 404 루트 이동을 차단하고 현재 관제 페이지 포커스
-        newNoti.onclick = (event) => {
-          event.preventDefault(); // 도메인 루트로 자동 이동하는 브라우저 기본 동작 차단
-          window.focus();
-          // 현재 페이지 경로 재요청으로 안전하게 화면 이동
-          window.location.href = window.location.href.split('#')[0]; 
-        };
+        try {
+          const newNoti = new Notification(title, options);
+          
+          newNoti.onclick = (event) => {
+            event.preventDefault();
+            window.focus();
+            window.location.href = window.location.href.split('#')[0]; 
+          };
 
-        notificationQueue.push(newNoti);
+          notificationQueue.push(newNoti);
+        } catch (err) {
+          console.error("알림 생성 오류:", err);
+        }
       }
     }
 
