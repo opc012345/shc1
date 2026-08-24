@@ -158,8 +158,6 @@
     let isSoundOn = true;
     let originalTitle = "차량입문 관제 시스템 - 신흥정밀";
     let titleInterval = null;
-    let audioContextUnlocked = false;
-    let audioObject = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     let notificationQueue = [];
 
     window.onload = () => {
@@ -172,15 +170,10 @@
     };
 
     async function enableNotificationsAndSound() {
-      try {
-        audioObject.volume = 0.1;
-        await audioObject.play();
-        audioObject.pause();
-        audioObject.currentTime = 0;
-        audioObject.volume = 1.0;
-        audioContextUnlocked = true;
-      } catch (e) {
-        console.log("오디오 활성화 시도 중:", e);
+      // 음성 안내 기능 잠금 해제 (사용자 인터랙션 필요)
+      if ('speechSynthesis' in window) {
+        const testUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(testUtterance);
       }
 
       if ("Notification" in window) {
@@ -188,7 +181,7 @@
         checkNotificationStatus();
         if (permission === "granted") {
           const testNoti = new Notification("알림이 활성화되었습니다", { 
-            body: "신규 차량 입문 시 윈도우 알림이 정상 발송됩니다.",
+            body: "신규 차량 입문 시 음성 안내 및 윈도우 알림이 정상 발송됩니다.",
             icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
           });
         } else {
@@ -278,12 +271,17 @@
         });
     }
 
+    // "차량이 입문 했습니다" 음성 안내 함수
     function playNotificationSound() {
       if (!isSoundOn) return;
-      try {
-        audioObject.currentTime = 0;
-        audioObject.play().catch(err => {});
-      } catch(e){}
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // 진행 중인 음성 취소
+        const utterance = new SpeechSynthesisUtterance('차량이 입문 했습니다');
+        utterance.lang = 'ko-KR';
+        utterance.rate = 1.0; // 말하기 속도
+        utterance.pitch = 1.0; // 음높이
+        window.speechSynthesis.speak(utterance);
+      }
     }
 
     function showDesktopNotification(carData) {
