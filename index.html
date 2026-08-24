@@ -237,7 +237,7 @@
       <div class="row-2">
         <div class="form-group">
           <label class="label-title"><i class="fa-solid fa-user"></i> 운전자 성함 <span class="required">*</span></label>
-          <input type="text" id="driverName" placeholder="홍길동" required>
+          <input type="text" id="driverName" placeholder="홍길동" required oninput="formatNameInput(this)">
         </div>
 
         <div class="form-group">
@@ -320,6 +320,11 @@
       input.value = input.value.replace(/\s+/g, '');
     }
 
+    // 운전자 성함 입력 시 자동 공백 제거
+    function formatNameInput(input) {
+      input.value = input.value.replace(/\s+/g, '');
+    }
+
     // 전화번호 입력 시 숫자만 허용 + 자동 하이픈(-) 포맷팅
     function formatPhoneInput(input) {
       let val = input.value.replace(/[^0-9]/g, '');
@@ -358,7 +363,7 @@
       e.preventDefault();
 
       const carNumber = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
-      const driverName = document.getElementById('driverName').value.trim();
+      const driverName = document.getElementById('driverName').value.replace(/\s+/g, '').trim();
       const phoneNumber = document.getElementById('phoneNumber').value.trim();
       const remember = document.getElementById('rememberInfo').checked;
 
