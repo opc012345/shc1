@@ -229,7 +229,7 @@
       <div class="form-group">
         <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
         <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 80가 1234" required oninput="loadMyStatus()">
+          <input type="text" id="carNumber" placeholder="예: 대전11가1234" required oninput="formatCarInput(this); loadMyStatus();">
           <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
@@ -242,7 +242,7 @@
 
         <div class="form-group">
           <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" required oninput="loadMyStatus()">
+          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" maxlength="13" required oninput="formatPhoneInput(this); loadMyStatus();">
         </div>
       </div>
 
@@ -314,6 +314,25 @@
 
       loadMyStatus();
     };
+
+    // 차량번호 입력 시 자동 공백 제거
+    function formatCarInput(input) {
+      input.value = input.value.replace(/\s+/g, '');
+    }
+
+    // 전화번호 입력 시 숫자만 허용 + 자동 하이픈(-) 포맷팅
+    function formatPhoneInput(input) {
+      let val = input.value.replace(/[^0-9]/g, '');
+      if (val.length < 4) {
+        input.value = val;
+      } else if (val.length < 7) {
+        input.value = val.substr(0, 3) + '-' + val.substr(3);
+      } else if (val.length < 11) {
+        input.value = val.substr(0, 3) + '-' + val.substr(3, 3) + '-' + val.substr(6);
+      } else {
+        input.value = val.substr(0, 3) + '-' + val.substr(3, 4) + '-' + val.substr(7, 4);
+      }
+    }
 
     function toggleAccordion() {
       const content = document.getElementById('accordionContent');
