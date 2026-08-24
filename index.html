@@ -29,27 +29,82 @@
     
     .header-guide-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px 16px; margin-bottom: 18px; text-align: left; }
     
-    /* 1, 2번 핵심 안내 문구 확대 */
+    /* 1, 2번 핵심 안내 문구 */
     .header-sub-main { font-size: 16px; color: #0f172a; font-weight: 800; margin-bottom: 14px; line-height: 1.6; word-break: keep-all; display: flex; flex-direction: column; gap: 8px; }
-    .main-step { display: flex; align-items: flex-start; gap: 6px; }
+    
+    .main-step { 
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px;
+      align-items: start;
+    }
     .step-num { color: #dc2626; flex-shrink: 0; }
     
-    /* 🔹 리스트 글맞춤 정밀 교정 (CSS Grid 적용) */
-    .header-sub-list { font-size: 14px; color: #334155; line-height: 1.5; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #edf2f7; }
+    /* 🔹 모바일/PC 완벽 수직 정렬 (Grid 레이아웃) */
+    .header-sub-list { 
+      font-size: 13.5px; 
+      color: #334155; 
+      line-height: 1.5; 
+      margin-bottom: 14px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+      background: #ffffff; 
+      padding: 12px; 
+      border-radius: 8px; 
+      border: 1px solid #edf2f7; 
+    }
     .list-item { 
       display: grid; 
-      grid-template-columns: 18px auto 1fr; 
+      grid-template-columns: auto 1fr; 
+      gap: 6px; 
       align-items: start; 
-      gap: 2px; 
     }
-    .list-item .icon { font-size: 12px; line-height: 1.6; }
-    .list-item .label { font-weight: 700; color: #1e293b; white-space: nowrap; margin-right: 4px; }
-    .list-item .desc { color: #334155; word-break: keep-all; font-weight: 500; }
+    .list-item .label-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .list-item .icon { font-size: 11px; }
+    .list-item .label { font-weight: 700; color: #1e293b; }
+    .list-item .desc { 
+      color: #334155; 
+      font-weight: 500; 
+      word-break: keep-all; 
+    }
 
-    .header-sub-notice { font-size: 13px; color: #dc2626; line-height: 1.55; font-weight: 700; border-top: 1px dashed #cbd5e1; padding-top: 12px; word-break: keep-all; }
-    .notice-item { margin-bottom: 6px; }
-    .notice-item:last-child { margin-bottom: 0; }
-    .indent-text { display: block; margin-left: 14px; }
+    /* 🚨 하단 경고문 수직 정렬 (Grid 레이아웃) */
+    .header-sub-notice { 
+      font-size: 13px; 
+      color: #dc2626; 
+      line-height: 1.5; 
+      font-weight: 700; 
+      border-top: 1px dashed #cbd5e1; 
+      padding-top: 12px; 
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .notice-item { 
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px;
+      align-items: start;
+    }
+    .notice-icon {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .notice-text {
+      word-break: keep-all;
+    }
+    .notice-sub {
+      color: #dc2626;
+      font-size: 12.5px;
+      margin-top: 2px;
+      word-break: keep-all;
+    }
 
     .accordion-toggle {
       width: 100%; padding: 14px 16px; background-color: #f1f5f9; color: #1e293b; border: 1.5px solid #cbd5e1;
@@ -64,7 +119,6 @@
     .contact-item { font-size: 14px; color: #334155; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
     .contact-item a { color: #dc2626; text-decoration: none; font-weight: bold; background: #fee2e2; padding: 6px 12px; border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
     
-    /* 약도 이미지 및 클릭 안내 */
     .map-container { position: relative; cursor: pointer; margin-top: 10px; }
     .map-img { width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
     .map-zoom-hint {
@@ -101,7 +155,6 @@
     .btn-submit { width: 100%; padding: 18px; background-color: #dc2626; color: white; border: none; border-radius: 14px; font-size: 18px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.2s; }
     .btn-submit:active { transform: scale(0.98); }
 
-    /* 내역 영역 스타일 */
     .status-section { margin-top: 26px; border-top: 1.5px dashed #cbd5e1; padding-top: 20px; }
     .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #334155; font-weight: 700; margin-bottom: 14px; }
     
@@ -138,7 +191,6 @@
     .btn-cancel:hover { background: #fee2e2; color: #dc2626; }
     .empty-msg { text-align: center; color: #64748b; font-size: 13px; font-weight: 500; padding: 24px 0; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; }
 
-    /* 모달 공통 스타일 */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center;
@@ -146,7 +198,6 @@
     }
     .modal-overlay.show { display: flex; }
     
-    /* 취소 모달 */
     .modal-box {
       background: #ffffff; width: 100%; max-width: 360px; border-radius: 18px;
       padding: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: fadeIn 0.2s ease-out;
@@ -166,7 +217,6 @@
     .modal-btn-confirm { background: #0f172a; color: white; }
     .modal-btn-cancel { background: #f1f5f9; color: #64748b; }
 
-    /* 이미지 라이트박스 모달 */
     .image-modal-content {
       position: relative; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; align-items: center;
     }
@@ -193,26 +243,40 @@
         <div class="main-step"><span class="step-num">2.</span> <span>지정된 장소에 주차 후 반드시 입문 등록을 해주세요.</span></div>
       </div>
       
-      <!-- 정밀 교정된 글 맞춤 영역 -->
+      <!-- 🔹 처음/고정 방문 수직 정렬 영역 -->
       <div class="header-sub-list">
         <div class="list-item">
-          <span class="icon">🔹</span>
-          <span class="label">처음 방문:</span>
-          <span class="desc">대기장소 주차 후 입문 등록</span>
+          <div class="label-group">
+            <span class="icon">🔹</span>
+            <span class="label">처음 방문:</span>
+          </div>
+          <div class="desc">대기장소 주차 후 입문 등록</div>
         </div>
         <div class="list-item">
-          <span class="icon">🔹</span>
-          <span class="label">고정 방문:</span>
-          <span class="desc">상하차장(또는 대기장소) 주차 후<br>입문 등록</span>
+          <div class="label-group">
+            <span class="icon">🔹</span>
+            <span class="label">고정 방문:</span>
+          </div>
+          <div class="desc">상하차장(또는 대기장소) 주차 후 입문 등록</div>
         </div>
       </div>
 
+      <!-- 🚨 하단 경고문 수직 정렬 영역 -->
       <div class="header-sub-notice">
-        <div class="notice-item">🚨 모든 기사님은 방문 시마다 입문 등록 필수</div>
-        <div class="notice-item">🚨 입문 등록이 완료되어야 담당자 확인 후<br>상하차가 진행됩니다.</div>
         <div class="notice-item">
-          ※ 입문 등록 후 대기해 주시고,<br>
-          <span class="indent-text">5분 이상 안내가 없을 경우 담당자에게 연락해 주세요.</span>
+          <span class="notice-icon">🚨</span>
+          <div class="notice-text">모든 기사님은 방문 시마다 입문 등록 필수</div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-icon">🚨</span>
+          <div class="notice-text">입문 등록이 완료되어야 담당자 확인 후 상하차가 진행됩니다.</div>
+        </div>
+        <div class="notice-item">
+          <span class="notice-icon">※</span>
+          <div class="notice-text">
+            입문 등록 후 대기해 주시고,
+            <div class="notice-sub">5분 이상 안내가 없을 경우 담당자에게 연락해 주세요.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -234,7 +298,6 @@
         </div>
       </div>
       
-      <!-- 클릭 시 확대되는 약도 영역 -->
       <div class="map-container" onclick="openMapModal()">
         <img src="map.png" alt="신흥정밀 약도" class="map-img">
         <div class="map-zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i> 터치하여 크게 보기</div>
@@ -291,7 +354,6 @@
 
   </div>
 
-  <!-- 취소 입력 커스텀 모달 -->
   <div class="modal-overlay" id="cancelModal">
     <div class="modal-box">
       <div class="modal-title">알림을 취소하려면 등록하셨던<br>[연락처 뒤 4자리]를 입력해 주세요.</div>
@@ -303,7 +365,6 @@
     </div>
   </div>
 
-  <!-- 약도 크게 보기 라이트박스 모달 -->
   <div class="modal-overlay" id="mapModal" onclick="closeMapModal()">
     <div class="image-modal-content" onclick="event.stopPropagation();">
       <button class="image-modal-close" onclick="closeMapModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -331,17 +392,14 @@
       loadMyStatus();
     };
 
-    // 차량번호 입력 시 자동 공백 제거
     function formatCarInput(input) {
       input.value = input.value.replace(/\s+/g, '');
     }
 
-    // 운전자 성함 입력 시 자동 공백 제거
     function formatNameInput(input) {
       input.value = input.value.replace(/\s+/g, '');
     }
 
-    // 전화번호 입력 시 숫자만 허용 + 자동 하이픈(-) 포맷팅
     function formatPhoneInput(input) {
       let val = input.value.replace(/[^0-9]/g, '');
       if (val.length < 4) {
@@ -362,7 +420,6 @@
       icon.className = content.classList.contains('show') ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
     }
 
-    /* 약도 크게 보기 모달 제어 함수 */
     function openMapModal() {
       document.getElementById('mapModal').classList.add('show');
     }
@@ -397,7 +454,6 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
 
-      // 1. Supabase 데이터베이스 등록
       const { error } = await _supabase
         .from('dock_control')
         .insert([{ 
@@ -414,7 +470,6 @@
         return;
       }
 
-      // 2. DB 등록 성공 직후 텔레그램 API 직접 호출
       const botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
       const chatId = "-5175407977";
       
