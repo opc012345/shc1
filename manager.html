@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>차량입문 관제 시스템 - 신흥정밀</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,6 +15,111 @@
     }
     .flash-alert {
       animation: pulse-border 1.5s infinite;
+    }
+
+    /* =========================================================
+       📱 모바일 환경(768px 이하) 반응형 카드 변환 레이아웃
+       ========================================================= */
+    @media (max-width: 768px) {
+      /* 테이블 기본 구조 해제 */
+      .overflow-x-auto { overflow-x: visible !important; }
+      table, thead, tbody, th, td, tr { display: block; }
+      thead { display: none; } /* PC 테이블 헤더 숨김 */
+
+      tbody#table-body {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px;
+        background-color: #f8fafc;
+      }
+
+      /* tr을 독립된 하나의 카드로 변경 */
+      tbody#table-body tr {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+      }
+
+      /* 각 셀(td)을 모바일 카드 내부 스타일로 재배치 */
+      tbody#table-body td {
+        padding: 0 !important;
+        border: none !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100% !important;
+        text-align: left !important;
+      }
+
+      /* 1. 체크박스 영역 (최상단 행) */
+      tbody#table-body td:nth-child(1) {
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding-bottom: 8px !important;
+        justify-content: flex-start;
+        gap: 8px;
+      }
+      tbody#table-body td:nth-child(1)::before {
+        content: "선택";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 2. 입문일시 */
+      tbody#table-body td:nth-child(2)::before {
+        content: "입문일시";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 3. 차량번호 */
+      tbody#table-body td:nth-child(3)::before {
+        content: "차량번호";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 4. 운전자 성함 */
+      tbody#table-body td:nth-child(4)::before {
+        content: "운전자 성함";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 5. 연락처 */
+      tbody#table-body td:nth-child(5)::before {
+        content: "연락처";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 6. 상태 배지 */
+      tbody#table-body td:nth-child(6)::before {
+        content: "상태";
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+      }
+
+      /* 7. 관리 버튼 (하단 분리선 및 우측 정렬) */
+      tbody#table-body td:nth-child(7) {
+        border-top: 1px solid #f1f5f9 !important;
+        padding-top: 10px !important;
+        margin-top: 4px;
+        justify-content: flex-end;
+        gap: 6px;
+      }
     }
   </style>
 </head>
@@ -189,7 +294,7 @@
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
     
-    const MANAGER_PASSWORD = 'manager1234';
+    const MANAGER_PASSWORD = 'cnfgkxla';
 
     let _supabase = null;
     let allRecords = [];
