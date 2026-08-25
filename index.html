@@ -798,20 +798,44 @@
       var targetId = currentCancelTargetId;
       closeCancelModal();
 
+      // Supabase 취소 처리 업데이트
       var res = await _supabase
         .from('dock_control')
         .update({ status: '입문취소' })
         .eq('id', targetId);
 
       if (res.error) {
-        alert('취소 실패: ' + res.error.message);
-      } else {
-        alert('알림이 취소되었습니다.');
-        loadMyStatus();
+        alert('취소 처리 중 오류가 발생했습니다: ' + res.error.message);
+        return;
       }
-    }
 
-    setInterval(function() { loadMyStatus(); }, 10000);
+      // 텔레그램 취소 메시지 발송
+      var botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
+      var chatId = "-5175407977";
+      var carNumber = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
+      var driverName = document.getElementById('driverName').value.replace(/\s+/g, '').trim();
+
+      var message = "⚠️ [입문 취소 요청]\n\n" +
+                    "🚛 차량번호: " + carNumber + "\n" +
+                    "👤 운전기사: " + driverName + "\n" +
+                    "❌ 기사님이 입문 등록을 취소했습니다.";
+
+      try {
+        await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: message
+          })
+        });
+      } catch (tgError) {
+        console.error("텔레그램 취소 알림 전송 실패:", tgError);
+      }
+
+      alert('입문 등록이 취소되었습니다.');
+      loadMyStatus();
+    }
   </script>
 </body>
 </html>
