@@ -5,12 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🚛 [신흥정밀] 차량 입문 등록 안내</title>
 
-  <!-- PWA 지원 설정 -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#c81e2b">
+  <!-- PWA 지원 및 독립 실행(Standalone) 설정 -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="신흥정밀 차량입문">
+  <meta name="theme-color" content="#c81e2b">
+
+  <!-- SHC 원형 로고 및 동적 Manifest 생성 (독립 실행 보장) -->
+  <script>
+    const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#c81e2b"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
+    const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
+    const logoUrl = URL.createObjectURL(logoBlob);
+
+    const manifest = {
+      id: "/shc-driver-app",
+      name: "신흥정밀 차량 입문 등록",
+      short_name: "신흥정밀 입문",
+      start_url: "./",
+      scope: "./",
+      display: "standalone",
+      orientation: "portrait",
+      background_color: "#f1f5f9",
+      theme_color: "#c81e2b",
+      icons: [{
+        src: logoUrl,
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+  </script>
 
   <!-- 카카오톡 링크 공유(미리보기 카드) 설정 -->
   <meta property="og:type" content="website">
@@ -485,10 +516,17 @@
     var currentCancelTargetId = null;
     var currentCancelTargetPhone = null;
 
-    /* PWA 서비스 워커 등록 */
+    /* PWA 서비스 워커 자동 등록 로직 */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+        const swCode = `
+          self.addEventListener('install', (e) => self.skipWaiting());
+          self.addEventListener('activate', (e) => self.clients.claim());
+          self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });
+        `;
+        const swBlob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(swBlob);
+        navigator.serviceWorker.register(swUrl).catch(function(err) {
           console.log('SW 등록 실패:', err);
         });
       });
@@ -540,12 +578,16 @@
     });
 
     window.onload = function() {
-      // 모바일 접속 판별
+      // 모바일 접속 판별 및 이미 설치된 독립 실행 모드인지 체크
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // 모바일 기기일 때만 수동 설치 버튼 표시 (PC 접속 시 표시 안 됨)
-      if (isMobile && manualBtn) {
+      // 이미 앱(Standalone)으로 띄워져 있다면 안내 버튼 숨김
+      if (isStandalone) {
+        if (pwaBanner) pwaBanner.classList.remove('show');
+        if (manualBtn) manualBtn.style.display = 'none';
+      } else if (isMobile && manualBtn) {
+        // 모바일 브라우저 접속 환경일 때만 수동 설치 버튼 표시
         manualBtn.style.display = 'flex';
       }
 
