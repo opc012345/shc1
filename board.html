@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 현황판</title>
-  
-  <!-- PWA 기본 메타태그 -->
+
+  <!-- PWA 기본 메타태그 (독립 앱 실행 설정) -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="신흥정밀 차량 현황판">
-  
+
   <!-- SHC 원형 로고 아이콘 -->
   <link rel="apple-touch-icon" id="app-icon-apple" href="">
   <link rel="icon" id="app-icon-fav" href="">
@@ -26,11 +26,15 @@
       document.getElementById('app-icon-fav').href = logoUrl;
     });
 
+    // 별도 앱 창으로 독립 실행되도록Manifest 설정 보완
     const manifest = {
+      id: "/shc-dock-board",
       name: "신흥정밀 차량 현황판",
-      short_name: "신흥정밀 차량 현황판",
+      short_name: "신흥정밀 현황판",
       start_url: "./",
+      scope: "./",
       display: "standalone",
+      orientation: "any",
       background_color: "#020617",
       theme_color: "#020617",
       icons: [{
@@ -76,7 +80,7 @@
 </head>
 <body class="bg-slate-950 text-white min-h-screen flex flex-col font-sans select-none">
 
-  <!-- 헤더 (상단) - 반응형 최적화 수정 적용 -->
+  <!-- 헤더 (상단) -->
   <header class="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 shadow-2xl shrink-0">
     <div class="flex items-center justify-between md:justify-start gap-2.5 md:gap-4">
       <div class="flex items-center gap-2.5 md:gap-3">
@@ -223,10 +227,10 @@
     // --- PC 환경 및 앱 감지 로직 ---
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
-      
+
       // 모바일 기기(스마트폰/태블릿) 여부 판단
       const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
-      
+
       // 이미 PWA 앱(독립 실행) 상태인지 판단
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
