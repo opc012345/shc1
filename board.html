@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 현황판</title>
   
+  <!-- PWA Manifest 연결 -->
+  <link rel="manifest" href="./board-manifest.json">
+
   <!-- SHC 원형 로고 아이콘 -->
   <link rel="apple-touch-icon" id="app-icon-apple" href="">
   <link rel="icon" id="app-icon-fav" href="">
@@ -19,7 +22,7 @@
       document.getElementById('app-icon-fav').href = logoUrl;
     });
 
-    // 독립된 현황판 전용 Service Worker 등록
+    // PWA Service Worker 등록
     if ('serviceWorker' in navigator) {
       const swCode = `
         self.addEventListener('install', (e) => self.skipWaiting());
@@ -28,7 +31,7 @@
       `;
       const swBlob = new Blob([swCode], { type: 'application/javascript' });
       const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl, { scope: './board.html' }).catch(err => console.log('SW register failed:', err));
+      navigator.serviceWorker.register(swUrl).catch(err => console.log('SW register failed:', err));
     }
   </script>
 
@@ -71,7 +74,6 @@
 
   <!-- 앱 설치 안내 카드 영역 -->
   <div id="pwa-install-wrapper" class="hidden p-4 md:px-6 pb-0">
-    <!-- 1. 스마트 팁 카드 -->
     <div id="smart-tip-card" class="hidden bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
       <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
         💡 현황판 담당자 전용 스마트 팁!
@@ -81,7 +83,6 @@
       </button>
     </div>
 
-    <!-- 2. 수동 설치 안내 버튼 -->
     <button id="manual-guide-btn" onclick="toggleManualGuide()" class="hidden w-full max-w-xl mx-auto bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs md:text-sm font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-all">
       <span class="flex items-center gap-2">
         <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
@@ -89,7 +90,6 @@
       <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
     </button>
 
-    <!-- 수동 설치 방법 상세 내용 -->
     <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
       <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
       <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
@@ -188,19 +188,21 @@
     let selectedRecordId = null;
     let deferredPrompt = null;
 
+    // 브라우저 PWA 설치 가능 이벤트 감지
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
+
+      // 설치 준비가 완벽히 되었을 때 스마트팁 카드 노출
+      const smartTipCard = document.getElementById('smart-tip-card');
+      if (smartTipCard) smartTipCard.classList.remove('hidden');
     });
 
-    // 접속 환경 분기 및 실제 독립 어플 실행 상태 감지
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
       const isAndroid = /Android/i.test(ua);
       const isChrome = /Chrome/i.test(ua) && !/KAKAOTALK/i.test(ua);
-      
-      // 기사용 어플과 겹치지 않는 독립 현황판 어플 판별
       const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
       const installWrapper = document.getElementById('pwa-install-wrapper');
@@ -211,15 +213,12 @@
       if (smartTipCard) smartTipCard.classList.add('hidden');
       if (manualGuideBtn) manualGuideBtn.classList.add('hidden');
 
-      // PC 접속이거나 현황판 어플로 실행된 경우는 팁 숨김
-      if (!isMobile || isStandalone) {
-        return;
-      }
+      if (!isMobile || isStandalone) return;
 
       if (installWrapper) installWrapper.classList.remove('hidden');
 
       if (isAndroid && isChrome) {
-        if (smartTipCard) smartTipCard.classList.remove('hidden');
+        if (deferredPrompt && smartTipCard) smartTipCard.classList.remove('hidden');
         if (manualGuideBtn) manualGuideBtn.classList.remove('hidden');
       } else {
         if (manualGuideBtn) manualGuideBtn.classList.remove('hidden');
@@ -227,13 +226,6 @@
     }
 
     function installPWA() {
-      if (!document.querySelector('link[rel="manifest"]')) {
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = './board-manifest.json';
-        document.head.appendChild(link);
-      }
-
       if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
@@ -244,6 +236,7 @@
           deferredPrompt = null;
         });
       } else {
+        // 아직 준비 이벤트가 안 왔거나 지원되지 않는 브라우저일 때만 수동 안내
         toggleManualGuide(true);
       }
     }
@@ -251,6 +244,8 @@
     function toggleManualGuide(forceOpen = false) {
       const guide = document.getElementById('manual-guide-content');
       const arrow = document.getElementById('guide-arrow');
+      if (!guide) return;
+
       if (forceOpen || guide.classList.contains('hidden')) {
         guide.classList.remove('hidden');
         if (arrow) arrow.classList.add('rotate-90');
@@ -262,7 +257,6 @@
 
     window.onload = () => {
       checkEnvironmentAndToggleTips();
-
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       const savedAudioState = localStorage.getItem('shc_audio_enabled');
@@ -345,9 +339,9 @@
     async function fetchBoardData() {
       if (!_supabase) return;
 
-      const today = new Date().toISOString().split('T')[0];
-      const start = `${today}T00:00:00`;
-      const end = `${today}T23:59:59`;
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0).toISOString();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
       const { data, error } = await _supabase
         .from('dock_control')
@@ -380,7 +374,8 @@
               speakTTS(`신규 차량 입장. ${newCar.car_number || ''} 차량이 대기열에 등록되었습니다.`);
             } else if (payload.eventType === 'UPDATE') {
               const updated = payload.new;
-              if (updated.status === '출문완료') {
+              const old = payload.old;
+              if (updated.status === '출문완료' && old.status !== '출문완료') {
                 speakTTS(`${updated.car_number || ''} 차량, 출문 처리되었습니다.`);
               }
             }
@@ -416,7 +411,7 @@
         `;
       } else {
         waitingContainer.innerHTML = waitingList.map((item, index) => {
-          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
           const isTop = index === 0;
 
           const maskedDriver = maskName(item.driver_name);
@@ -462,7 +457,7 @@
         `;
       } else {
         completedContainer.innerHTML = completedList.slice(0, 6).map(item => {
-          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
           const maskedDriver = maskName(item.driver_name);
 
           return `
