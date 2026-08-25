@@ -3,28 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>신흥정밀 - 실시간 차량 대기 현황판</title>
+  <title>신흥정밀 차량 현황판</title>
   
-  <!-- PWA 기본 메타태그 -->
+  <!-- PWA 기본 메타태그 (기사님용과 동일한 SHC 로고 적용) -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SHC 현황판">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2555/2555013.png">
+  <meta name="apple-mobile-web-app-title" content="신흥정밀 차량 현황판">
+  
+  <!-- SHC 원형 로고 아이콘 (SVG Data URI) -->
+  <link rel="apple-touch-icon" id="app-icon-apple" href="">
+  <link rel="icon" id="app-icon-fav" href="">
 
   <!-- 동적 PWA Manifest 및 Service Worker 자동 생성 스크립트 -->
   <script>
+    // SHC 붉은 원형 로고 동적 생성 (바탕화면 아이콘용)
+    const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
+    const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
+    const logoUrl = URL.createObjectURL(logoBlob);
+
+    // iOS 및 파비콘에 SHC 로고 연결
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('app-icon-apple').href = logoUrl;
+      document.getElementById('app-icon-fav').href = logoUrl;
+    });
+
+    // PWA 설정 (어플 이름: 신흥정밀 차량 현황판)
     const manifest = {
-      name: "신흥정밀 실시간 현황판",
-      short_name: "SHC 현황판",
+      name: "신흥정밀 차량 현황판",
+      short_name: "신흥정밀 차량 현황판",
       start_url: "./",
       display: "standalone",
       background_color: "#020617",
       theme_color: "#020617",
       icons: [{
-        src: "https://cdn-icons-png.flaticon.com/512/2555/2555013.png",
+        src: logoUrl,
         sizes: "512x512",
-        type: "image/png"
+        type: "image/svg+xml",
+        purpose: "any maskable"
       }]
     };
     const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -65,9 +81,12 @@
 
   <!-- 헤더 (상단) -->
   <header class="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-2xl shrink-0">
-    <div class="flex items-center gap-2 md:gap-4 flex-wrap">
-      <span class="bg-red-600 text-white font-black text-lg md:text-xl px-2.5 py-1 rounded-lg tracking-wider">SHC</span>
-      <h1 class="text-xl md:text-3xl font-black tracking-tight text-white">실시간 차량 대기 현황판</h1>
+    <div class="flex items-center gap-3 md:gap-4 flex-wrap">
+      <!-- 원형 SHC 로고 -->
+      <div class="w-10 h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-sm md:text-base tracking-tighter italic shadow-md border-2 border-red-500/50 shrink-0">
+        SHC
+      </div>
+      <h1 class="text-xl md:text-3xl font-black tracking-tight text-white">신흥정밀 차량 현황판</h1>
       <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs px-2.5 py-1 rounded-full font-bold">연결 확인 중...</span>
     </div>
 
@@ -80,22 +99,22 @@
     </div>
   </header>
 
-  <!-- 담당자용 앱 설치 배너 영역 -->
+  <!-- 앱 설치 안내 카드 레이아웃 -->
   <div class="p-4 md:px-6 pb-0">
-    <!-- 1. 담당자 맞춤 설치 배너 -->
-    <div class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
+    <!-- 1. 스마트 팁 카드 (카카오톡/아이폰 등 인앱 브라우저 접속 시 JS로 숨김) -->
+    <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
       <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
         💡 현황판 담당자 전용 스마트 팁!
       </p>
       <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl shadow-md text-sm md:text-base flex items-center justify-center gap-2 transition-all">
-        <i class="fa-solid fa-download"></i> 현황판 바로가기 앱 설치 (바탕화면)
+        <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
       </button>
     </div>
 
-    <!-- 2. 아이폰 / 모바일 접속 시 수동 설치 안내 버튼 -->
+    <!-- 2. 수동 설치 안내 버튼 -->
     <button onclick="toggleManualGuide()" class="w-full max-w-xl mx-auto bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs md:text-sm font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-all">
       <span class="flex items-center gap-2">
-        <i class="fa-mobile-screen-button"></i> 아이폰 / 모바일 수동 앱 설치 방법
+        <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
       </span>
       <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
     </button>
@@ -103,9 +122,9 @@
     <!-- 수동 설치 방법 상세 내용 (기본 숨김) -->
     <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
       <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
-      <p>하단 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
-      <p class="font-bold text-amber-400 mt-2">🤖 안드로이드 (Chrome / 삼성인터넷)</p>
-      <p>우측 상단 [⋮] 버튼 클릭 ➔ [앱 설치] 또는 [홈 화면에 추가] 선택</p>
+      <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
+      <p class="font-bold text-amber-400 mt-2">💬 카카오톡 내부 브라우저인 경우</p>
+      <p>우측 하단 [⋮] 또는 [⋯] 버튼 클릭 ➔ [다른 브라우저로 열기] 후 설치 진행</p>
     </div>
   </div>
 
@@ -202,11 +221,25 @@
     let selectedRecordId = null;
     let deferredPrompt = null;
 
-    // --- PWA 앱 설치 이벤트 감지 ---
+    // --- PWA 앱 설치 가능 환경 체크 및 카카오톡/iOS 감지 ---
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
     });
+
+    function checkEnvironmentAndToggleTips() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isKakao = ua.includes('kakaotalk');
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isOtherInApp = ua.includes('line') || ua.includes('inapp');
+
+      const smartTipCard = document.getElementById('smart-tip-card');
+      
+      // 카카오톡 등 인앱 브라우저이거나 iOS(아이폰)인 경우 스마트 팁(1클릭 설치 배너) 감추기
+      if (isKakao || isIOS || isOtherInApp) {
+        if (smartTipCard) smartTipCard.classList.add('hidden');
+      }
+    }
 
     function installPWA() {
       if (deferredPrompt) {
@@ -227,14 +260,16 @@
       const arrow = document.getElementById('guide-arrow');
       if (forceOpen || guide.classList.contains('hidden')) {
         guide.classList.remove('hidden');
-        arrow.classList.add('rotate-90');
+        if (arrow) arrow.classList.add('rotate-90');
       } else {
         guide.classList.add('hidden');
-        arrow.classList.remove('rotate-90');
+        if (arrow) arrow.classList.remove('rotate-90');
       }
     }
 
     window.onload = () => {
+      checkEnvironmentAndToggleTips();
+
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       // 음성 알림 설정 복원
