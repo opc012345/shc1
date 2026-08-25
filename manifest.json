@@ -1,6 +1,6 @@
 {
-  "name": "신흥정밀",
-  "short_name": "신흥정밀",
+  "name": "신흥정밀 차량입문",
+  "short_name": "신흥정밀 차량입문",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
