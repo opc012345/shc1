@@ -76,6 +76,7 @@
 
     /* 수동 앱 설치 안내 버튼 */
     .manual-install-btn {
+      display: none;
       width: 100%;
       padding: 12px 14px;
       background-color: #eff6ff;
@@ -85,11 +86,13 @@
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
-      display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 18px;
       transition: all 0.2s;
+    }
+    .manual-install-btn.show {
+      display: flex;
     }
     .manual-install-btn:active {
       background-color: #dbeafe;
@@ -338,9 +341,9 @@
       </button>
     </div>
 
-    <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 -->
-    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert(' 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 또는 [홈 화면에 추가] 선택')">
-      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i>  아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+    <!-- 2. 수동 설치 안내 버튼 -->
+    <button type="button" class="manual-install-btn" id="manualInstallBtn" onclick="alert(' 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 또는 [홈 화면에 추가] 선택')">
+      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
       <i class="fa-solid fa-chevron-right"></i>
     </button>
 
@@ -494,68 +497,44 @@
       });
     }
 
-    /* 환경 판별 함수 및 제어 */
     var deferredPrompt = null;
-    var pwaBanner = document.getElementById('pwaBanner');
-    var btnPwaInstall = document.getElementById('btnPwaInstall');
+    var ua = navigator.userAgent;
 
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // 모바일 접속 여부 (휴대폰, 태블릿)
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    // 안드로이드 환경 여부
+    var isAndroid = /Android/i.test(ua);
+    // 크롬 브라우저 여부 (카카오톡 내장 브라우저 KAKAOTALK 은 제외)
+    var isChrome = /Chrome/i.test(ua) && !/KAKAOTALK/i.test(ua);
+    // 홈 화면 어플(Standalone) 접속 여부
     var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
-    // 모바일 브라우저로 들어오면 무조건 배너 일단 노출 (어플 실행 모드 standalone 제외)
-    if (isMobile && !isStandalone && pwaBanner) {
-      pwaBanner.classList.add('show');
-    }
-
-    // 아이폰 Safari 접속 시 문구 처리
-    if (isIOS && !isStandalone) {
-      if (btnPwaInstall) {
-        btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
-        btnPwaInstall.onclick = function() {
-          alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
-        };
-      }
-    }
-
-    // 안드로이드 크롬 등 자동 설치 가능한 환경 이벤트
+    // 안드로이드 크롬 원터치 다운로드 이벤트 수집
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
     });
 
-    if (btnPwaInstall && !isIOS) {
-      btnPwaInstall.addEventListener('click', async function() {
-        if (!deferredPrompt) {
-          alert("안드로이드 수동 설치 방법:\n1. 우측 상단 점 3개(⋮) 터치\n2. [앱 설치] 또는 [홈 화면에 추가] 선택");
-          return;
-        }
-        deferredPrompt.prompt();
-        var choiceResult = await deferredPrompt.userChoice;
-        if (choiceResult.outcome === 'accepted') {
-          if (pwaBanner) pwaBanner.classList.remove('show');
-        }
-        deferredPrompt = null;
-      });
-    }
-
-    window.addEventListener('appinstalled', function() {
-      if (pwaBanner) pwaBanner.classList.remove('show');
-    });
-
     window.onload = function() {
+      var pwaBanner = document.getElementById('pwaBanner');
       var manualBtn = document.getElementById('manualInstallBtn');
-      
-      // 모바일 기기이면서 PWA 실행 모드가 아닐 때만 수동 설치 버튼 표시
-      if (isMobile && !isStandalone && manualBtn) {
-        manualBtn.style.display = 'flex';
-      } else if (manualBtn) {
-        manualBtn.style.display = 'none';
-      }
 
-      // 이미 어플로 켰을 땐 스마트팁 배너 완전히 숨김
-      if (isStandalone && pwaBanner) {
-        pwaBanner.classList.remove('show');
+      // 초기화: 모두 숨김 처리
+      if (pwaBanner) pwaBanner.classList.remove('show');
+      if (manualBtn) manualBtn.classList.remove('show');
+
+      /* 접속 환경별 제어 조건문 */
+      if (!isMobile || isStandalone) {
+        // [조건 1 & 4] PC 접속 또는 홈 화면 어플 접속 시: 둘 다 숨김
+      } 
+      else if (isAndroid && isChrome) {
+        // [조건 2] 모바일 안드로이드 + 크롬 접속 시: 두 안내 모두 보이기
+        if (pwaBanner) pwaBanner.classList.add('show');
+        if (manualBtn) manualBtn.classList.add('show');
+      } 
+      else {
+        // [조건 3] 아이폰, 카카오톡 웹뷰 등 접속 시: 스마트팁 숨기기, 수동 안내만 보이기
+        if (manualBtn) manualBtn.classList.add('show');
       }
 
       var savedCar = localStorage.getItem('shc_car');
@@ -568,6 +547,29 @@
 
       loadMyStatus();
     };
+
+    // 안드로이드 설치 버튼 동작
+    var btnPwaInstall = document.getElementById('btnPwaInstall');
+    if (btnPwaInstall) {
+      btnPwaInstall.addEventListener('click', async function() {
+        if (!deferredPrompt) {
+          alert("안드로이드 수동 설치 방법:\n1. 우측 상단 점 3개(⋮) 터치\n2. [앱 설치] 또는 [홈 화면에 추가] 선택");
+          return;
+        }
+        deferredPrompt.prompt();
+        var choiceResult = await deferredPrompt.userChoice;
+        if (choiceResult.outcome === 'accepted') {
+          var pwaBanner = document.getElementById('pwaBanner');
+          if (pwaBanner) pwaBanner.classList.remove('show');
+        }
+        deferredPrompt = null;
+      });
+    }
+
+    window.addEventListener('appinstalled', function() {
+      var pwaBanner = document.getElementById('pwaBanner');
+      if (pwaBanner) pwaBanner.classList.remove('show');
+    });
 
     function formatCarInput(input) {
       input.value = input.value.replace(/\s+/g, '');
