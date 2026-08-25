@@ -3,7 +3,7 @@
   "short_name": "현장관리",
   "description": "신흥정밀 차량 입문 현장 관리 시스템",
   "start_url": "./board.html",
-  "display": "standalone",
+  "display": "minimal-ui",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
