@@ -1,7 +1,9 @@
 {
   "name": "신흥정밀 차량입문",
   "short_name": "신흥정밀 차량입문",
+  "id": "/index.html",
   "start_url": "./index.html",
+  "scope": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#c81e2b",
