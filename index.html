@@ -41,7 +41,7 @@
       border: 1.5px solid #f59e0b;
       border-radius: 14px;
       padding: 14px;
-      margin-bottom: 18px;
+      margin-bottom: 10px;
       text-align: center;
     }
     .pwa-install-banner.show {
@@ -72,6 +72,27 @@
     }
     .btn-pwa-install:active {
       transform: scale(0.98);
+    }
+
+    /* 수동 앱 설치 안내 버튼 */
+    .manual-install-btn {
+      width: 100%;
+      padding: 12px 14px;
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border: 1.5px solid #bfdbfe;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      transition: all 0.2s;
+    }
+    .manual-install-btn:active {
+      background-color: #dbeafe;
     }
 
     .header-guide-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px 16px; margin-bottom: 18px; text-align: left; }
@@ -153,10 +174,10 @@
     .accordion-toggle {
       width: 100%; padding: 14px 16px; background-color: #f1f5f9; color: #1e293b; border: 1.5px solid #cbd5e1;
       border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex;
-      justify-content: space-between; align-items: center; margin-bottom: 12px; transition: all 0.2s;
+      justify-content: space-between; align-items: center; margin-bottom: 18px; transition: all 0.2s;
     }
     .accordion-toggle:hover { background-color: #e2e8f0; }
-    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: -4px; margin-bottom: 20px; }
+    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: -8px; margin-bottom: 20px; }
     .accordion-content.show { display: block; }
     .contact-group { margin-bottom: 14px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px; }
     .contact-group:last-child { margin-bottom: 10px; border-bottom: none; padding-bottom: 0; }
@@ -309,13 +330,19 @@
     </div>
     <h1 class="header-title">신흥정밀 차량 입문 등록 안내</h1>
     
-    <!-- 조건에 맞을 때만 상단에 나타나는 앱 설치 유도 배너 -->
+    <!-- 1. 원터치 앱 설치 스마트 팁 배너 -->
     <div class="pwa-install-banner" id="pwaBanner">
       <div class="pwa-title">💡 자주 오시는 기사님을 위한 스마트 팁!</div>
       <button type="button" class="btn-pwa-install" id="btnPwaInstall">
         <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
       </button>
     </div>
+
+    <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 -->
+    <button type="button" class="manual-install-btn" onclick="alert('📲 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 선택')">
+      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 📲 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
 
     <div class="header-guide-box">
       <div class="header-sub-main">
@@ -358,12 +385,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 언제든지 손쉽게 어플 설치법을 볼 수 있는 상시 버튼 -->
-    <button type="button" class="accordion-toggle" onclick="alert('📲 바탕화면 앱 설치 방법\n\n1. 안드로이드(크롬): 브라우저 메뉴(⋮) ➔ [앱 설치] 선택\n2. 아이폰(사파리): 하단 [공유] 버튼 ➔ [홈 화면에 추가] 선택')" style="background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">
-      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 📲 스마트폰 바탕화면에 앱 설치하는 방법</span>
-      <i class="fa-solid fa-chevron-right"></i>
-    </button>
 
     <button type="button" class="accordion-toggle" onclick="toggleAccordion()">
       <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i> 🗺️ 약도 및 담당자 연락처 보기</span>
