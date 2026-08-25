@@ -5,14 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 현황판</title>
   
-  <!-- 외부 Manifest 파일 연결 (PWA 앱 설치용) -->
-  <link rel="manifest" href="./board-manifest.json">
-
   <!-- SHC 원형 로고 아이콘 -->
   <link rel="apple-touch-icon" id="app-icon-apple" href="">
   <link rel="icon" id="app-icon-fav" href="">
 
-  <!-- 아이콘 및 Service Worker 등록 스크립트 -->
   <script>
     const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
     const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
@@ -23,6 +19,7 @@
       document.getElementById('app-icon-fav').href = logoUrl;
     });
 
+    // Service Worker 등록
     if ('serviceWorker' in navigator) {
       const swCode = `
         self.addEventListener('install', (e) => self.skipWaiting());
@@ -196,7 +193,7 @@
       deferredPrompt = e;
     });
 
-    // --- 접속 환경 4가지 분기 로직 ---
+    // --- 접속 환경 4가지 정확한 분기 로직 ---
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent;
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
@@ -208,17 +205,15 @@
       const smartTipCard = document.getElementById('smart-tip-card');
       const manualGuideBtn = document.getElementById('manual-guide-btn');
 
-      // 초기화 (숨김)
       if (installWrapper) installWrapper.classList.add('hidden');
       if (smartTipCard) smartTipCard.classList.add('hidden');
       if (manualGuideBtn) manualGuideBtn.classList.add('hidden');
 
-      // PC 접속 시 또는 어플 접속 시 -> 배너 영역 전체 숨김
+      // PC 접속 시 또는 이미 앱으로 실행 중인 경우 배너 완전 숨김
       if (!isMobile || isStandalone) {
         return;
       }
 
-      // 모바일 웹 접속 시 wrapper 노출
       if (installWrapper) installWrapper.classList.remove('hidden');
 
       if (isAndroid && isChrome) {
@@ -232,11 +227,18 @@
     }
 
     function installPWA() {
+      // 앱 설치 시점에만 manifest를 동적으로 연결
+      if (!document.querySelector('link[rel="manifest"]')) {
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = './board-manifest.json';
+        document.head.appendChild(link);
+      }
+
       if (deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            console.log('앱 설치가 수락되었습니다.');
             const smartTipCard = document.getElementById('smart-tip-card');
             if (smartTipCard) smartTipCard.classList.add('hidden');
           }
