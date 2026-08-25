@@ -28,28 +28,34 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen flex flex-col font-sans select-none" onclick="enableAudio()">
+<body class="bg-slate-950 text-white min-h-screen flex flex-col font-sans select-none">
 
-  <!-- 헤더 (상단) - 모바일 대응 반응형 적용 -->
+  <!-- 헤더 (상단) -->
   <header class="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-2xl shrink-0">
     <div class="flex items-center gap-2 md:gap-4 flex-wrap">
       <span class="bg-red-600 text-white font-black text-lg md:text-xl px-2.5 py-1 rounded-lg tracking-wider">SHC</span>
       <h1 class="text-xl md:text-3xl font-black tracking-tight text-white">실시간 차량 대기 현황판</h1>
       <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs px-2.5 py-1 rounded-full font-bold">연결 확인 중...</span>
+      
+      <!-- 앱 설치 버튼 (지원되는 환경에서 자동 노출) -->
+      <button id="pwa-install-btn" onclick="installPWA()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-lg items-center gap-1.5 transition-all">
+        <i class="fa-solid fa-download"></i> 앱 설치
+      </button>
     </div>
 
     <div class="flex items-center justify-between w-full md:w-auto gap-4">
-      <div id="audio-notice" class="text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1 rounded-lg flex items-center gap-2">
-        <i class="fa-solid fa-volume-high animate-bounce"></i> 클릭 시 음성 알림 활성화
-      </div>
+      <!-- 음성 알림 버튼 (해당 버튼 클릭 시에만 음성 활성화) -->
+      <button id="audio-notice" onclick="enableAudio(event)" class="text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-amber-900/50 transition-all cursor-pointer">
+        <i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화
+      </button>
       <div id="current-clock" class="text-xl md:text-3xl font-mono font-bold text-slate-300">00:00:00</div>
     </div>
   </header>
 
-  <!-- 메인 디스플레이 영역 - 모바일 세로 배치 / PC 가로 배치 -->
+  <!-- 메인 디스플레이 영역 -->
   <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 overflow-y-auto lg:overflow-hidden">
 
-    <!-- 좌측: 현재 구역 내 대기중 차량 (모바일 우선) -->
+    <!-- 좌측: 현재 구역 내 대기중 차량 -->
     <section class="lg:col-span-7 bg-slate-900/80 rounded-2xl md:rounded-3xl border border-slate-800 p-4 md:p-6 flex flex-col shadow-2xl">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 md:pb-4 md:mb-4">
         <div class="flex items-center gap-2 md:gap-3">
@@ -139,6 +145,30 @@
     let allRecords = [];
     let isAudioEnabled = false;
     let selectedRecordId = null;
+    let deferredPrompt = null;
+
+    // --- PWA 앱 설치 이벤트 등록 ---
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('pwa-install-btn');
+      if (installBtn) installBtn.classList.remove('hidden');
+    });
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted install prompt');
+          }
+          deferredPrompt = null;
+          document.getElementById('pwa-install-btn').classList.add('hidden');
+        });
+      } else {
+        alert("아이폰(iOS)은 사파리(Safari) 브라우저 하단 공유 버튼 클릭 후 '홈 화면에 추가'를 눌러주세요.");
+      }
+    }
 
     window.onload = () => {
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -175,15 +205,20 @@
       return str;
     }
 
-    function enableAudio() {
+    // --- 음성 알림 버튼 전용 클릭 함수 ---
+    function enableAudio(event) {
+      if (event) event.stopPropagation(); // 다른 이벤트와 격리
+
       if (!isAudioEnabled) {
         isAudioEnabled = true;
         const notice = document.getElementById('audio-notice');
         if (notice) {
-          notice.className = "text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2.5 py-1 rounded-lg flex items-center gap-2";
+          notice.className = "text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 cursor-default";
           notice.innerHTML = `<i class="fa-solid fa-volume-high"></i> 음성 알림 활성화됨`;
         }
         speakTTS('음성 알림이 활성화되었습니다.');
+      } else {
+        speakTTS('음성 알림이 이미 활성화되어 있습니다.');
       }
     }
 
