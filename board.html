@@ -5,12 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 - 실시간 차량 대기 현황판</title>
   
-  <!-- 모바일 어플 설치 지원 PWA 메타태그 -->
+  <!-- PWA 기본 메타태그 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SHC 현황판">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2555/2555013.png">
+
+  <!-- 동적 PWA Manifest 및 Service Worker 자동 생성 스크립트 -->
+  <script>
+    const manifest = {
+      name: "신흥정밀 실시간 현황판",
+      short_name: "SHC 현황판",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#020617",
+      theme_color: "#020617",
+      icons: [{
+        src: "https://cdn-icons-png.flaticon.com/512/2555/2555013.png",
+        sizes: "512x512",
+        type: "image/png"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('activate', (e) => self.clients.claim());
+        self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(err => console.log('SW register failed:', err));
+    }
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -23,7 +57,6 @@
     .highlight-card {
       animation: pulse-bg 2s infinite;
     }
-    /* 스크롤바 숨기기 */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
@@ -36,21 +69,45 @@
       <span class="bg-red-600 text-white font-black text-lg md:text-xl px-2.5 py-1 rounded-lg tracking-wider">SHC</span>
       <h1 class="text-xl md:text-3xl font-black tracking-tight text-white">실시간 차량 대기 현황판</h1>
       <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs px-2.5 py-1 rounded-full font-bold">연결 확인 중...</span>
-      
-      <!-- 앱 설치 버튼 (지원되는 환경에서 자동 노출) -->
-      <button id="pwa-install-btn" onclick="installPWA()" class="hidden bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-lg items-center gap-1.5 transition-all">
-        <i class="fa-solid fa-download"></i> 앱 설치
-      </button>
     </div>
 
     <div class="flex items-center justify-between w-full md:w-auto gap-4">
-      <!-- 음성 알림 버튼 (해당 버튼 클릭 시에만 음성 활성화) -->
-      <button id="audio-notice" onclick="enableAudio(event)" class="text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-amber-900/50 transition-all cursor-pointer">
+      <!-- 음성 알림 버튼 -->
+      <button id="audio-notice" onclick="toggleAudio(event)" class="text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-amber-900/50 transition-all cursor-pointer">
         <i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화
       </button>
       <div id="current-clock" class="text-xl md:text-3xl font-mono font-bold text-slate-300">00:00:00</div>
     </div>
   </header>
+
+  <!-- 담당자용 앱 설치 배너 영역 -->
+  <div class="p-4 md:px-6 pb-0">
+    <!-- 1. 담당자 맞춤 설치 배너 -->
+    <div class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
+      <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
+        💡 현황판 담당자 전용 스마트 팁!
+      </p>
+      <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl shadow-md text-sm md:text-base flex items-center justify-center gap-2 transition-all">
+        <i class="fa-solid fa-download"></i> 현황판 바로가기 앱 설치 (바탕화면)
+      </button>
+    </div>
+
+    <!-- 2. 아이폰 / 모바일 접속 시 수동 설치 안내 버튼 -->
+    <button onclick="toggleManualGuide()" class="w-full max-w-xl mx-auto bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs md:text-sm font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-all">
+      <span class="flex items-center gap-2">
+        <i class="fa-mobile-screen-button"></i> 아이폰 / 모바일 수동 앱 설치 방법
+      </span>
+      <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
+    </button>
+
+    <!-- 수동 설치 방법 상세 내용 (기본 숨김) -->
+    <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
+      <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
+      <p>하단 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
+      <p class="font-bold text-amber-400 mt-2">🤖 안드로이드 (Chrome / 삼성인터넷)</p>
+      <p>우측 상단 [⋮] 버튼 클릭 ➔ [앱 설치] 또는 [홈 화면에 추가] 선택</p>
+    </div>
+  </div>
 
   <!-- 메인 디스플레이 영역 -->
   <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 overflow-y-auto lg:overflow-hidden">
@@ -67,7 +124,6 @@
 
       <!-- 대기 카드 목록 -->
       <div id="waiting-list" class="flex-1 space-y-3 md:space-y-4 overflow-y-auto no-scrollbar pr-1 min-h-[160px]">
-        <!-- 동적 생성 카드가 들어가는 자리 -->
       </div>
     </section>
 
@@ -101,7 +157,6 @@
         </div>
 
         <div id="completed-list" class="flex-1 space-y-2.5 md:space-y-3 overflow-y-auto no-scrollbar">
-          <!-- 최근 출문 완료 목록 동적 생성 -->
         </div>
       </div>
 
@@ -147,12 +202,10 @@
     let selectedRecordId = null;
     let deferredPrompt = null;
 
-    // --- PWA 앱 설치 이벤트 등록 ---
+    // --- PWA 앱 설치 이벤트 감지 ---
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const installBtn = document.getElementById('pwa-install-btn');
-      if (installBtn) installBtn.classList.remove('hidden');
     });
 
     function installPWA() {
@@ -160,18 +213,35 @@
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
           if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted install prompt');
+            console.log('앱 설치가 수락되었습니다.');
           }
           deferredPrompt = null;
-          document.getElementById('pwa-install-btn').classList.add('hidden');
         });
       } else {
-        alert("아이폰(iOS)은 사파리(Safari) 브라우저 하단 공유 버튼 클릭 후 '홈 화면에 추가'를 눌러주세요.");
+        toggleManualGuide(true);
+      }
+    }
+
+    function toggleManualGuide(forceOpen = false) {
+      const guide = document.getElementById('manual-guide-content');
+      const arrow = document.getElementById('guide-arrow');
+      if (forceOpen || guide.classList.contains('hidden')) {
+        guide.classList.remove('hidden');
+        arrow.classList.add('rotate-90');
+      } else {
+        guide.classList.add('hidden');
+        arrow.classList.remove('rotate-90');
       }
     }
 
     window.onload = () => {
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      // 음성 알림 설정 복원
+      const savedAudioState = localStorage.getItem('shc_audio_enabled');
+      if (savedAudioState === 'true') {
+        applyAudioUI(true);
+      }
 
       updateClock();
       setInterval(updateClock, 1000);
@@ -180,7 +250,6 @@
       subscribeRealtime();
     };
 
-    // --- 마스킹 처리 헬퍼 함수 ---
     function maskName(name) {
       if (!name || name === '-' || name === 'null') return '-';
       const str = String(name).trim();
@@ -205,20 +274,29 @@
       return str;
     }
 
-    // --- 음성 알림 버튼 전용 클릭 함수 ---
-    function enableAudio(event) {
-      if (event) event.stopPropagation(); // 다른 이벤트와 격리
+    function toggleAudio(event) {
+      if (event) event.stopPropagation();
 
-      if (!isAudioEnabled) {
-        isAudioEnabled = true;
-        const notice = document.getElementById('audio-notice');
-        if (notice) {
-          notice.className = "text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 cursor-default";
-          notice.innerHTML = `<i class="fa-solid fa-volume-high"></i> 음성 알림 활성화됨`;
-        }
+      isAudioEnabled = !isAudioEnabled;
+      localStorage.setItem('shc_audio_enabled', isAudioEnabled ? 'true' : 'false');
+      applyAudioUI(isAudioEnabled);
+
+      if (isAudioEnabled) {
         speakTTS('음성 알림이 활성화되었습니다.');
-      } else {
-        speakTTS('음성 알림이 이미 활성화되어 있습니다.');
+      }
+    }
+
+    function applyAudioUI(enabled) {
+      isAudioEnabled = enabled;
+      const notice = document.getElementById('audio-notice');
+      if (notice) {
+        if (enabled) {
+          notice.className = "text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-emerald-900/50 transition-all cursor-pointer";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high"></i> 음성 알림 활성화됨 (클릭 시 끄기)`;
+        } else {
+          notice.className = "text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-amber-900/50 transition-all cursor-pointer";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화`;
+        }
       }
     }
 
@@ -297,12 +375,10 @@
       const waitingList = allRecords.filter(i => (i.status || '대기중') === '대기중');
       const completedList = allRecords.filter(i => i.status === '출문완료');
 
-      // 수치 업데이트
       document.getElementById('stat-total').innerText = allRecords.length;
       document.getElementById('stat-completed').innerText = completedList.length;
       document.getElementById('waiting-count').innerText = waitingList.length;
 
-      // 1. 대기 목록 렌더링
       const waitingContainer = document.getElementById('waiting-list');
       if (waitingList.length === 0) {
         waitingContainer.innerHTML = `
@@ -352,7 +428,6 @@
         }).join('');
       }
 
-      // 2. 최근 출문 완료 목록 렌더링
       const completedContainer = document.getElementById('completed-list');
       if (completedList.length === 0) {
         completedContainer.innerHTML = `
@@ -377,7 +452,6 @@
       }
     }
 
-    // --- 모달 제어 함수 ---
     function openExitModal(id, carNumber) {
       selectedRecordId = id;
       document.getElementById('modal-car-number').innerText = carNumber;
