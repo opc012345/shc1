@@ -24,14 +24,20 @@
     .header-title { font-size: 20px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 8px; }
     .refresh-info { font-size: 12px; color: #94a3b8; text-align: right; }
 
-    /* PWA 설치 유도 배너 */
-    .pwa-install-banner {
-      display: none; background: #1e293b; border: 1.5px solid #3b82f6; border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;
+    /* PWA 설치 유도 스마트팁 배너 */
+    .pwa-smart-tip {
+      display: none; background: #1e293b; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 12px; margin-bottom: 12px; text-align: center;
     }
-    .pwa-install-banner.show { display: block; }
+    .pwa-smart-tip.show { display: block; }
     .btn-pwa-install {
-      width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
+      width: 100%; background: #0284c7; color: #ffffff; border: none; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px;
     }
+
+    /* 아이폰 / 수동 설치 안내 버튼 */
+    .manual-install-btn {
+      display: none; width: 100%; background: #334155; color: #f1f5f9; border: 1px solid #475569; padding: 10px; border-radius: 10px; font-size: 13.5px; font-weight: 700; margin-bottom: 16px; cursor: pointer; text-align: center;
+    }
+    .manual-install-btn.show { display: flex; justify-content: space-between; align-items: center; }
 
     .status-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
     .summary-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px; text-align: center; }
@@ -80,12 +86,18 @@
       </div>
     </div>
 
-    <!-- PWA 설치 배너 (안드로이드 크롬 접속 시만 표시) -->
-    <div class="pwa-install-banner" id="pwaBanner">
+    <!-- 스마트 팁 (원터치 다운로드 배너) -->
+    <div class="pwa-smart-tip" id="pwaSmartTip">
       <button type="button" class="btn-pwa-install" id="btnPwaInstall">
-        <i class="fa-solid fa-download"></i> 현장 관리자 전용 어플 설치
+        <i class="fa-solid fa-download"></i> 현장 관리자 전용 어플 원터치 설치
       </button>
     </div>
+
+    <!-- 아이폰 / 카카오톡 접속 시 수동 설치 안내 버튼 -->
+    <button type="button" class="manual-install-btn" id="manualInstallBtn" onclick="alert('iOS / 수동 설치 방법:\n1. 외부 브라우저(사파리/크롬)로 접속\n2. 브라우저 [공유] 또는 [점3개] 메뉴 선택\n3. [홈 화면에 추가] 선택')">
+      <span><i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
 
     <div class="status-summary">
       <div class="summary-card">
@@ -135,11 +147,24 @@
     });
 
     window.onload = function() {
-      var pwaBanner = document.getElementById('pwaBanner');
-      if (pwaBanner) pwaBanner.classList.remove('show');
+      var pwaSmartTip = document.getElementById('pwaSmartTip');
+      var manualInstallBtn = document.getElementById('manualInstallBtn');
 
-      if (isMobile && isAndroid && isChrome && !isStandalone) {
-        if (pwaBanner) pwaBanner.classList.add('show');
+      if (pwaSmartTip) pwaSmartTip.classList.remove('show');
+      if (manualInstallBtn) manualInstallBtn.classList.remove('show');
+
+      // 4가지 접속 환경 조건 분기 처리
+      if (!isMobile || isStandalone) {
+        // [조건 1] PC 접속 시 또는 [조건 4] 이미 설치된 어플로 접속 시 -> 모두 숨김
+      } else {
+        if (isAndroid && isChrome) {
+          // [조건 2] 모바일 안드로이드 + 크롬 접속 시 -> 스마트팁 ⭕ / 수동 ⭕
+          if (pwaSmartTip) pwaSmartTip.classList.add('show');
+          if (manualInstallBtn) manualInstallBtn.classList.add('show');
+        } else {
+          // [조건 3] 모바일 카카오톡 / 아이폰 접속 시 -> 스마트팁 ❌ / 수동 ⭕
+          if (manualInstallBtn) manualInstallBtn.classList.add('show');
+        }
       }
 
       fetchBoardData();
@@ -155,8 +180,8 @@
         deferredPrompt.prompt();
         var choiceResult = await deferredPrompt.userChoice;
         if (choiceResult.outcome === 'accepted') {
-          var pwaBanner = document.getElementById('pwaBanner');
-          if (pwaBanner) pwaBanner.classList.remove('show');
+          var pwaSmartTip = document.getElementById('pwaSmartTip');
+          if (pwaSmartTip) pwaSmartTip.classList.remove('show');
         }
         deferredPrompt = null;
       });
