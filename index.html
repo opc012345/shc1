@@ -499,17 +499,20 @@
     var pwaBanner = document.getElementById('pwaBanner');
     var btnPwaInstall = document.getElementById('btnPwaInstall');
 
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      if (pwaBanner) {
+      // 어플 실행 환경(standalone)이나 PC 환경이 아닐 때만 노출
+      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (pwaBanner && !isStandalone && isMobile) {
         pwaBanner.classList.add('show');
       }
     });
 
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
+    // 아이폰 Safari 접속 시 (단, 이미 어플 실행 형태인 standalone일 때는 배너 제외)
     if (isIOS && !isStandalone) {
       if (pwaBanner) {
         pwaBanner.classList.add('show');
@@ -540,13 +543,20 @@
     });
 
     window.onload = function() {
-      // 모바일 접속 판별
+      // 모바일 접속 여부 판단 및 PWA 어플 독립 실행(standalone) 판단
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // 모바일 기기일 때만 수동 설치 버튼 표시 (PC 접속 시 표시 안 됨)
-      if (isMobile && manualBtn) {
+      // 모바일 기기이면서 PWA 실행 모드가 아닐 때만 수동 설치 버튼 표시 (PC 및 어플 실행 시 숨김)
+      if (isMobile && !isStandalone && manualBtn) {
         manualBtn.style.display = 'flex';
+      } else if (manualBtn) {
+        manualBtn.style.display = 'none';
+      }
+
+      // 어플 실행 시(PWA 독립 실행 모드) 스마트팁 배너 숨기기
+      if (isStandalone && pwaBanner) {
+        pwaBanner.classList.remove('show');
       }
 
       var savedCar = localStorage.getItem('shc_car');
