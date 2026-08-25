@@ -1,20 +1,12 @@
-{
-  "name": "기사님 전용 앱",
-  "short_name": "기사님앱",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#007bff",
-  "icons": [
-    {
-      "src": "https://via.placeholder.com/192",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://via.placeholder.com/512",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
-}
+// sw.js 파일 내용
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  return self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  // 기본 통신 가로채기 설정
+});
