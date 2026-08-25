@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="신흥정밀 차량입문">
   <meta name="theme-color" content="#c81e2b">
 
-  <!-- SHC 원형 로고 및 동적 Manifest 생성 (독립 실행 보장) -->
+  <!-- SHC 원형 로고 및 동적 Manifest 생성 -->
   <script>
     const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#c81e2b"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
     const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
@@ -361,7 +361,7 @@
     </div>
     <h1 class="header-title">신흥정밀 차량 입문 등록 안내</h1>
     
-    <!-- 1. 원터치 앱 설치 스마트 팁 배너 -->
+    <!-- 스마트 팁 배너 -->
     <div class="pwa-install-banner" id="pwaBanner">
       <div class="pwa-title">💡 자주 오시는 기사님을 위한 스마트 팁!</div>
       <button type="button" class="btn-pwa-install" id="btnPwaInstall">
@@ -369,7 +369,7 @@
       </button>
     </div>
 
-    <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 (기본 숨김 처리) -->
+    <!-- 수동 앱 설치 안내 버튼 -->
     <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert(' 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 선택')">
       <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i>  아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
       <i class="fa-solid fa-chevron-right"></i>
@@ -516,7 +516,7 @@
     var currentCancelTargetId = null;
     var currentCancelTargetPhone = null;
 
-    /* PWA 서비스 워커 자동 등록 로직 */
+    /* PWA 서비스 워커 자동 등록 */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
         const swCode = `
@@ -532,31 +532,23 @@
       });
     }
 
-    /* PWA 앱 설치 지원 제어 */
     var deferredPrompt = null;
     var pwaBanner = document.getElementById('pwaBanner');
     var btnPwaInstall = document.getElementById('btnPwaInstall');
+    var manualBtn = document.getElementById('manualInstallBtn');
 
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+    /* 크롬 등 일반 모바일 브라우저 설치 팝업 감지 */
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      if (pwaBanner) {
+      if (!isStandalone && isMobile && pwaBanner) {
         pwaBanner.classList.add('show');
       }
     });
-
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIOS && !isStandalone) {
-      if (pwaBanner) {
-        pwaBanner.classList.add('show');
-        btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
-        btnPwaInstall.onclick = function() {
-          alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
-        };
-      }
-    }
 
     if (btnPwaInstall && !isIOS) {
       btnPwaInstall.addEventListener('click', async function() {
@@ -567,7 +559,7 @@
         deferredPrompt.prompt();
         var choiceResult = await deferredPrompt.userChoice;
         if (choiceResult.outcome === 'accepted') {
-          pwaBanner.classList.remove('show');
+          if (pwaBanner) pwaBanner.classList.remove('show');
         }
         deferredPrompt = null;
       });
@@ -575,20 +567,30 @@
 
     window.addEventListener('appinstalled', function() {
       if (pwaBanner) pwaBanner.classList.remove('show');
+      if (manualBtn) manualBtn.style.display = 'none';
     });
 
     window.onload = function() {
-      // 모바일 접속 판별 및 이미 설치된 독립 실행 모드인지 체크
-      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      var manualBtn = document.getElementById('manualInstallBtn');
-      
-      // 이미 앱(Standalone)으로 띄워져 있다면 안내 버튼 숨김
-      if (isStandalone) {
+      // 1. PWA 앱(Standalone) 실행 시 OR PC 접속 시 ➔ 스마트 팁, 수동설치 숨김
+      if (isStandalone || !isMobile) {
         if (pwaBanner) pwaBanner.classList.remove('show');
         if (manualBtn) manualBtn.style.display = 'none';
-      } else if (isMobile && manualBtn) {
-        // 모바일 브라우저 접속 환경일 때만 수동 설치 버튼 표시
-        manualBtn.style.display = 'flex';
+      } 
+      // 2. 모바일 브라우저 접속 시 ➔ 스마트 팁 및 수동설치 노출
+      else {
+        if (manualBtn) manualBtn.style.display = 'flex';
+        
+        if (isIOS) {
+          if (pwaBanner) {
+            pwaBanner.classList.add('show');
+            btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
+            btnPwaInstall.onclick = function() {
+              alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
+            };
+          }
+        } else if (pwaBanner) {
+          pwaBanner.classList.add('show');
+        }
       }
 
       var savedCar = localStorage.getItem('shc_car');
