@@ -6,7 +6,7 @@
   <title>🚛 [신흥정밀] 차량 상하차 안내</title>
 
   <!-- PWA 지원 설정 -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#c81e2b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -153,10 +153,10 @@
     .accordion-toggle {
       width: 100%; padding: 14px 16px; background-color: #f1f5f9; color: #1e293b; border: 1.5px solid #cbd5e1;
       border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex;
-      justify-content: space-between; align-items: center; margin-bottom: 20px; transition: all 0.2s;
+      justify-content: space-between; align-items: center; margin-bottom: 12px; transition: all 0.2s;
     }
     .accordion-toggle:hover { background-color: #e2e8f0; }
-    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: -12px; margin-bottom: 20px; }
+    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: -4px; margin-bottom: 20px; }
     .accordion-content.show { display: block; }
     .contact-group { margin-bottom: 14px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px; }
     .contact-group:last-child { margin-bottom: 10px; border-bottom: none; padding-bottom: 0; }
@@ -261,7 +261,6 @@
     .modal-btn-confirm { background: #0f172a; color: white; }
     .modal-btn-cancel { background: #f1f5f9; color: #64748b; }
 
-    /* 약도 모달 최적화 */
     .image-modal-content {
       position: relative;
       width: 100%;
@@ -310,7 +309,7 @@
     </div>
     <h1 class="header-title">신흥정밀 차량 입문 등록 안내</h1>
     
-    <!-- 앱 설치 유도 배너 (조건 충족 시 자동 표시) -->
+    <!-- 조건에 맞을 때만 상단에 나타나는 앱 설치 유도 배너 -->
     <div class="pwa-install-banner" id="pwaBanner">
       <div class="pwa-title">💡 자주 오시는 기사님을 위한 스마트 팁!</div>
       <button type="button" class="btn-pwa-install" id="btnPwaInstall">
@@ -359,6 +358,12 @@
         </div>
       </div>
     </div>
+
+    <!-- 언제든지 손쉽게 어플 설치법을 볼 수 있는 상시 버튼 -->
+    <button type="button" class="accordion-toggle" onclick="alert('📲 바탕화면 앱 설치 방법\n\n1. 안드로이드(크롬): 브라우저 메뉴(⋮) ➔ [앱 설치] 선택\n2. 아이폰(사파리): 하단 [공유] 버튼 ➔ [홈 화면에 추가] 선택')" style="background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe;">
+      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 📲 스마트폰 바탕화면에 앱 설치하는 방법</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
 
     <button type="button" class="accordion-toggle" onclick="toggleAccordion()">
       <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i> 🗺️ 약도 및 담당자 연락처 보기</span>
@@ -468,12 +473,11 @@
       });
     }
 
-    /* PWA 앱 설치 이벤트 제어 */
+    /* PWA 앱 설치 지원 제어 */
     var deferredPrompt = null;
     var pwaBanner = document.getElementById('pwaBanner');
     var btnPwaInstall = document.getElementById('btnPwaInstall');
 
-    // 안드로이드 / PC 설치 감지
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
@@ -482,25 +486,23 @@
       }
     });
 
-    // 아이폰(iOS) 접속 시 안내
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
     if (isIOS && !isStandalone) {
       if (pwaBanner) {
         pwaBanner.classList.add('show');
-        btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법';
+        btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
         btnPwaInstall.onclick = function() {
-          alert("아이폰(Safari) 설치 방법:\n하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택");
+          alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
         };
       }
     }
 
-    // 안드로이드 버튼 클릭 이벤트
     if (btnPwaInstall && !isIOS) {
       btnPwaInstall.addEventListener('click', async function() {
         if (!deferredPrompt) {
-          alert("이미 앱이 설치되어 있거나 브라우저에서 지원하지 않습니다.");
+          alert("이미 앱이 설치되어 있거나 브라우저 환경상 자동 설치를 지원하지 않습니다.");
           return;
         }
         deferredPrompt.prompt();
@@ -512,7 +514,6 @@
       });
     }
 
-    // 설치 완료 시 배너 감추기
     window.addEventListener('appinstalled', function() {
       if (pwaBanner) pwaBanner.classList.remove('show');
     });
