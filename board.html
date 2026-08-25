@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>🚛 [신흥정밀] 현장 입문 관리 시스템</title>
 
-  <!-- 현장 관리자 전용 PWA 지원 설정 -->
+  <!-- 현장 관리자 전용 PWA 매니페스트 연결 -->
   <link rel="manifest" href="./board-manifest.json">
   <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -138,7 +138,6 @@
       var pwaBanner = document.getElementById('pwaBanner');
       if (pwaBanner) pwaBanner.classList.remove('show');
 
-      // 모바일 안드로이드 크롬 브라우저 접속 시에만 PWA 설치 배너 노출
       if (isMobile && isAndroid && isChrome && !isStandalone) {
         if (pwaBanner) pwaBanner.classList.add('show');
       }
@@ -249,7 +248,6 @@
       }
     }
 
-    // 10초마다 실시간 데이터 자동 동기화
     setInterval(fetchBoardData, 10000);
   </script>
 </body>
