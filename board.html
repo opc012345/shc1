@@ -5,30 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 현황판</title>
   
-  <!-- PWA 기본 메타태그 (기사님용과 동일한 SHC 로고 적용) -->
+  <!-- PWA 기본 메타태그 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="신흥정밀 차량 현황판">
   
-  <!-- SHC 원형 로고 아이콘 (SVG Data URI) -->
+  <!-- SHC 원형 로고 아이콘 -->
   <link rel="apple-touch-icon" id="app-icon-apple" href="">
   <link rel="icon" id="app-icon-fav" href="">
 
   <!-- 동적 PWA Manifest 및 Service Worker 자동 생성 스크립트 -->
   <script>
-    // SHC 붉은 원형 로고 동적 생성 (바탕화면 아이콘용)
     const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
     const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
     const logoUrl = URL.createObjectURL(logoBlob);
 
-    // iOS 및 파비콘에 SHC 로고 연결
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('app-icon-apple').href = logoUrl;
       document.getElementById('app-icon-fav').href = logoUrl;
     });
 
-    // PWA 설정 (어플 이름: 신흥정밀 차량 현황판)
     const manifest = {
       name: "신흥정밀 차량 현황판",
       short_name: "신흥정밀 차량 현황판",
@@ -82,7 +79,6 @@
   <!-- 헤더 (상단) -->
   <header class="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-2xl shrink-0">
     <div class="flex items-center gap-3 md:gap-4 flex-wrap">
-      <!-- 원형 SHC 로고 -->
       <div class="w-10 h-10 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-sm md:text-base tracking-tighter italic shadow-md border-2 border-red-500/50 shrink-0">
         SHC
       </div>
@@ -91,7 +87,6 @@
     </div>
 
     <div class="flex items-center justify-between w-full md:w-auto gap-4">
-      <!-- 음성 알림 버튼 -->
       <button id="audio-notice" onclick="toggleAudio(event)" class="text-xs text-amber-400 bg-amber-950/50 border border-amber-800 px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-amber-900/50 transition-all cursor-pointer">
         <i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화
       </button>
@@ -99,9 +94,9 @@
     </div>
   </header>
 
-  <!-- 앱 설치 안내 카드 레이아웃 -->
-  <div class="p-4 md:px-6 pb-0">
-    <!-- 1. 스마트 팁 카드 (카카오톡/아이폰 등 인앱 브라우저 접속 시 JS로 숨김) -->
+  <!-- 앱 설치 안내 카드 영역 (PC / 앱 실행 환경 시 완전 감춤) -->
+  <div id="pwa-install-wrapper" class="hidden p-4 md:px-6 pb-0">
+    <!-- 1. 스마트 팁 카드 -->
     <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
       <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
         💡 현황판 담당자 전용 스마트 팁!
@@ -119,7 +114,7 @@
       <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
     </button>
 
-    <!-- 수동 설치 방법 상세 내용 (기본 숨김) -->
+    <!-- 수동 설치 방법 상세 내용 -->
     <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
       <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
       <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
@@ -141,7 +136,6 @@
         <span class="text-sm md:text-lg font-bold text-slate-400">총 <span id="waiting-count" class="text-xl md:text-3xl font-black text-amber-400 mx-1">0</span>대 대기 중</span>
       </div>
 
-      <!-- 대기 카드 목록 -->
       <div id="waiting-list" class="flex-1 space-y-3 md:space-y-4 overflow-y-auto no-scrollbar pr-1 min-h-[160px]">
       </div>
     </section>
@@ -149,7 +143,6 @@
     <!-- 우측: 상태 요약 & 최근 출문 완료 차량 -->
     <section class="lg:col-span-5 flex flex-col gap-4 md:gap-6">
 
-      <!-- 상단 현황 수치 요약 -->
       <div class="grid grid-cols-2 gap-3 md:gap-4">
         <div class="bg-slate-900/80 border border-slate-800 p-4 md:p-5 rounded-2xl flex items-center justify-between">
           <div>
@@ -168,7 +161,6 @@
         </div>
       </div>
 
-      <!-- 최근 출문 완료 목록 -->
       <div class="flex-1 bg-slate-900/80 rounded-2xl md:rounded-3xl border border-slate-800 p-4 md:p-6 flex flex-col shadow-2xl overflow-hidden min-h-[180px]">
         <div class="flex items-center gap-2 md:gap-3 border-b border-slate-800 pb-3 mb-3 md:pb-4 md:mb-4">
           <div class="w-3 h-6 md:w-4 md:h-8 bg-emerald-500 rounded-full"></div>
@@ -221,23 +213,40 @@
     let selectedRecordId = null;
     let deferredPrompt = null;
 
-    // --- PWA 앱 설치 가능 환경 체크 및 카카오톡/iOS 감지 ---
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
     });
 
+    // --- PC 환경 및 앱 감지 로직 ---
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
+      
+      // 모바일 기기(스마트폰/태블릿) 여부 판단
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
+      
+      // 이미 PWA 앱(독립 실행) 상태인지 판단
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      const installWrapper = document.getElementById('pwa-install-wrapper');
+      const smartTipCard = document.getElementById('smart-tip-card');
+
+      // PC 브라우저이거나 이미 어플로 띄운 상태라면 설치 관련 배너 전체 숨김
+      if (!isMobile || isStandalone) {
+        if (installWrapper) installWrapper.classList.add('hidden');
+        return;
+      }
+
+      // 모바일 웹 브라우저 접속 환경일 때만 배너 노출
+      if (installWrapper) installWrapper.classList.remove('hidden');
+
+      // 카카오톡/iOS 환경 체크하여 스마트 팁 조절
       const isKakao = ua.includes('kakaotalk');
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isOtherInApp = ua.includes('line') || ua.includes('inapp');
 
-      const smartTipCard = document.getElementById('smart-tip-card');
-      
-      // 카카오톡 등 인앱 브라우저이거나 iOS(아이폰)인 경우 스마트 팁(1클릭 설치 배너) 감추기
-      if (isKakao || isIOS || isOtherInApp) {
-        if (smartTipCard) smartTipCard.classList.add('hidden');
+      if ((isKakao || isIOS || isOtherInApp) && smartTipCard) {
+        smartTipCard.classList.add('hidden');
       }
     }
 
@@ -272,7 +281,6 @@
 
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // 음성 알림 설정 복원
       const savedAudioState = localStorage.getItem('shc_audio_enabled');
       if (savedAudioState === 'true') {
         applyAudioUI(true);
