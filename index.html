@@ -339,7 +339,7 @@
     </div>
 
     <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 (기본 숨김 처리) -->
-    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert(' 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 선택')">
+    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="showManualInstallGuide()">
       <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i>  아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
       <i class="fa-solid fa-chevron-right"></i>
     </button>
@@ -485,6 +485,12 @@
     var currentCancelTargetId = null;
     var currentCancelTargetPhone = null;
 
+    /* 환경 판별 로직 */
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    var isKakao = /KAKAOTALK/i.test(ua);
+    var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
     /* PWA 서비스 워커 등록 */
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
@@ -502,26 +508,23 @@
     window.addEventListener('beforeinstallprompt', function(e) {
       e.preventDefault();
       deferredPrompt = e;
-      if (pwaBanner) {
+      if (pwaBanner && !isIOS && !isKakao) {
         pwaBanner.classList.add('show');
       }
     });
 
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-    // 모바일 웹(사파리) 접속 중에만 iOS 수동 배너를 표시하고, 앱(standalone) 접속 시에는 안 보이도록 제어합니다.
-    if (isIOS && !isStandalone) {
+    // 아이폰 Safari 접속 환경 제어
+    if (isIOS && !isStandalone && !isKakao) {
       if (pwaBanner) {
         pwaBanner.classList.add('show');
         btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
         btnPwaInstall.onclick = function() {
-          alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
+          alert("아이폰(Safari) 앱 설치 방법:\n\n1. Safari 하단 중앙 [공유] 버튼(↑) 클릭\n2. 메뉴에서 [홈 화면에 추가] 선택");
         };
       }
     }
 
-    if (btnPwaInstall && !isIOS) {
+    if (btnPwaInstall && !isIOS && !isKakao) {
       btnPwaInstall.addEventListener('click', async function() {
         if (!deferredPrompt) {
           alert("이미 앱이 설치되어 있거나 브라우저 환경상 자동 설치를 지원하지 않습니다.");
@@ -540,17 +543,23 @@
       if (pwaBanner) pwaBanner.classList.remove('show');
     });
 
+    function showManualInstallGuide() {
+      if (isKakao) {
+        alert("💬 카카오톡 접속 상태입니다!\n\n1. 우측 상단 또는 하단 점 3개(⋮ 또는 ···) 클릭\n2. [다른 브라우저로 열기] 선택\n3. 브라우저로 이동 후 아래 방법 진행:\n   • 아이폰: 하단 공유 버튼(↑) ➔ [홈 화면에 추가]\n   • 안드로이드: 메뉴(⋮) ➔ [앱 설치]");
+      } else if (isIOS) {
+        alert("🍎 아이폰(Safari) 앱 설치 방법:\n\n1. Safari 하단 중앙 [공유] 버튼(↑) 클릭\n2. 메뉴에서 [홈 화면에 추가] 선택");
+      } else {
+        alert("🤖 안드로이드(Chrome) 앱 설치 방법:\n\n1. Chrome 우측 상단 점 3개(⋮) 클릭\n2. 메뉴에서 [앱 설치] 또는 [홈 화면에 추가] 선택");
+      }
+    }
+
     window.onload = function() {
-      // 모바일 접속 및 어플(standalone) 환경 판별
-      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // 모바일 브라우저 접속 환경이며, '어플(standalone)'로 접속한 상태가 아닐 때만 수동 설치 버튼 표시
-      if (isMobile && !isStandalone && manualBtn) {
-        manualBtn.style.style.display = 'none'; // 안전 초기화
+      // 카카오톡 접속 시 또는 아이폰 접속 시(standalone이 아닐 때) 버튼 노출
+      if ((isKakao || (isIOS && !isStandalone)) && manualBtn) {
         manualBtn.style.display = 'flex';
       } else if (manualBtn) {
-        // 어플(standalone)로 실행 중이거나 PC 접속 시 수동 안내 버튼 숨김
         manualBtn.style.display = 'none';
       }
 
