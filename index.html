@@ -4,40 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 입문 등록</title>
-  <!-- 기사용 전용 매니페스트 연결 -->
+  <!-- 기사용 독립 매니페스트 -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#dc2626">
-  <style>
-    /* 기본 레이아웃 및 스타일 */
-    body { font-family: sans-serif; margin: 0; padding: 16px; background-color: #f8fafc; }
-    #pwa-install-wrapper { margin-bottom: 16px; }
-    #smart-tip-card { background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 8px; }
-    .install-btn { background: #d97706; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-    #manual-guide-btn { background: #e2e8f0; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
-  <!-- PWA 설치 안내 영역 -->
-  <div id="pwa-install-wrapper">
-    <!-- 스마트팁 배너 -->
-    <div id="smart-tip-card">
-      <p style="margin: 0 0 8px 0; font-size: 14px;">💡 자주 오시는 기사님을 위한 스마트 팁!</p>
-      <button class="install-btn" onclick="installPWA()">⬇️ 클릭 한 번으로 바탕화면에 앱 설치</button>
-    </div>
-    <!-- 아이폰/수동 설치 안내 버튼 -->
-    <div id="manual-guide-btn" onclick="alert('우측 상단 메뉴(⋮) -> [앱 설치] 또는 [홈 화면에 추가]를 클릭하세요.')">
-      <span>📱 아이폰 / 수동 설치 방법 안내</span>
-      <span>></span>
-    </div>
-  </div>
+  <div class="max-w-md w-full mx-auto bg-white min-h-screen shadow-lg flex flex-col justify-between p-4">
+    <div>
+      <!-- 로고 영역 -->
+      <div class="flex justify-center my-4">
+        <div class="w-16 h-16 bg-red-700 rounded-full flex items-center justify-center text-white font-bold text-xl tracking-tighter shadow-md">
+          SHC
+        </div>
+      </div>
 
-  <!-- 메인 컨텐츠 영역 -->
-  <div class="card">
-    <h2>신흥정밀 차량 입문 등록 안내</h2>
-    <p>1. 보안실 접수 없이 바로 통록해 주세요.</p>
-    <p>2. 지정된 장소에 주차 후 반드시 입문 등록을 해주세요.</p>
+      <h1 class="text-xl font-bold text-center text-gray-900 mb-4">신흥정밀 차량 입문 등록 안내</h1>
+
+      <!-- PWA 설치 안내 전체 영역 -->
+      <div id="pwa-install-wrapper" class="mb-4">
+        <!-- 스마트팁 배너 -->
+        <div id="smart-tip-card" class="bg-amber-100 border border-amber-300 rounded-lg p-3 text-center mb-2 shadow-sm">
+          <p class="text-xs text-amber-800 font-semibold mb-2">💡 자주 오시는 기사님을 위한 스마트 팁!</p>
+          <button onclick="installPWA()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-lg text-sm shadow transition duration-150 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
+          </button>
+        </div>
+
+        <!-- 수동 설치 안내 버튼 -->
+        <div id="manual-guide-btn" onclick="alert('우측 상단 메뉴(⋮) -> [앱 설치] 또는 [홈 화면에 추가]를 선택해 주세요.')" class="bg-slate-100 border border-slate-200 rounded-lg p-3 flex justify-between items-center cursor-pointer text-slate-700 hover:bg-slate-200 transition">
+          <span class="text-xs font-bold"><i class="fa-solid fa-mobile-screen-button mr-1"></i> 아이폰 / 수동 설치 방법 안내</span>
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </div>
+      </div>
+
+      <!-- 본문 안내 사항 -->
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3 text-sm text-gray-800">
+        <div class="flex items-start gap-2">
+          <span class="bg-red-600 text-white font-bold rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+          <p class="font-semibold">보안실 접수 없이 바로 통록해 주세요.</p>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="bg-red-600 text-white font-bold rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+          <p class="font-semibold">지정된 장소에 주차 후 반드시 입문 등록을 해주세요.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -50,7 +64,7 @@
       checkEnvironmentAndToggleTips();
     });
 
-    // 접속 환경 감지 및 배너 제어
+    // 접속 환경 감지 및 배너 제어 (요청하신 조건 100% 반영)
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
       
@@ -101,7 +115,6 @@
       }
     }
 
-    // 페이지 로드 완료 시 환경 체크 실행
     window.addEventListener('DOMContentLoaded', checkEnvironmentAndToggleTips);
   </script>
 </body>
