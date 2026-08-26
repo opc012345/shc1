@@ -3,7 +3,7 @@
   "short_name": "차량현황판",
   "id": "board-app-v1",
   "start_url": "./board.html",
-  "scope": "./",
+  "scope": "./board.html",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
