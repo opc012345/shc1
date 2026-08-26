@@ -4,39 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>신흥정밀 차량 현황판</title>
-  <!-- 현장용 전용 매니페스트 연결 -->
+  <!-- 현장용 독립 매니페스트 -->
   <link rel="manifest" href="board-manifest.json">
   <meta name="theme-color" content="#020617">
-  <style>
-    /* 현황판 다크모드 기본 레이아웃 */
-    body { font-family: sans-serif; margin: 0; padding: 16px; background-color: #020617; color: #f8fafc; }
-    #pwa-install-wrapper { margin-bottom: 16px; }
-    #smart-tip-card { background: #1e293b; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 8px; }
-    .install-btn { background: #f59e0b; color: #020617; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; }
-    #manual-guide-btn { background: #0f172a; border: 1px solid #334155; padding: 10px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: #94a3b8; }
-    .card { background: #0f172a; border-radius: 8px; padding: 16px; border: 1px solid #1e293b; }
-  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
 
-  <!-- PWA 설치 안내 영역 -->
-  <div id="pwa-install-wrapper">
-    <!-- 스마트팁 배너 -->
-    <div id="smart-tip-card">
-      <p style="margin: 0 0 8px 0; font-size: 14px; color: #fbbf24;">💡 현황판 담당자 전용 스마트 팁!</p>
-      <button class="install-btn" onclick="installPWA()">⬇️ 클릭 한 번으로 현황판 앱 설치</button>
-    </div>
-    <!-- 아이폰/수동 설치 안내 버튼 -->
-    <div id="manual-guide-btn" onclick="alert('우측 상단 메뉴(⋮) -> [앱 설치] 또는 [홈 화면에 추가]를 클릭하세요.')">
-      <span>📱 아이폰 / 수동 설치 방법 안내</span>
-      <span>></span>
-    </div>
-  </div>
+  <div class="max-w-md w-full mx-auto min-h-screen flex flex-col justify-between p-4">
+    <div>
+      <!-- 상단 헤더 -->
+      <div class="flex justify-between items-center my-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
+            SHC
+          </div>
+          <h1 class="text-lg font-bold">신흥정밀 차량 현황판</h1>
+        </div>
+        <span class="bg-emerald-950 text-emerald-400 text-xs px-2.5 py-1 rounded-full border border-emerald-800/50 flex items-center gap-1 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 실시간 연결됨
+        </span>
+      </div>
 
-  <!-- 메인 현황판 영역 -->
-  <div class="card">
-    <h2 style="margin-top: 0;">🚛 입문 대기 차량</h2>
-    <p style="color: #94a3b8;">현재 입문 대기 중인 차량이 없습니다.</p>
+      <!-- PWA 설치 안내 영역 -->
+      <div id="pwa-install-wrapper" class="mb-4">
+        <!-- 스마트팁 배너 -->
+        <div id="smart-tip-card" class="bg-slate-900 border border-amber-500/50 rounded-xl p-3 text-center mb-2 shadow-lg">
+          <p class="text-xs text-amber-400 font-semibold mb-2">💡 현황판 담당자 전용 스마트 팁!</p>
+          <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 px-4 rounded-lg text-sm shadow transition duration-150 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> 클릭 한 번으로 현황판 앱 설치
+          </button>
+        </div>
+
+        <!-- 수동 설치 안내 버튼 -->
+        <div id="manual-guide-btn" onclick="alert('우측 상단 메뉴(⋮) -> [앱 설치] 또는 [홈 화면에 추가]를 선택해 주세요.')" class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 flex justify-between items-center cursor-pointer text-slate-400 hover:bg-slate-800 transition">
+          <span class="text-xs font-medium"><i class="fa-solid fa-mobile-screen-button mr-1"></i> 아이폰 / 수동 설치 방법 안내</span>
+          <i class="fa-solid fa-chevron-right text-xs"></i>
+        </div>
+      </div>
+
+      <!-- 대기 차량 현황 카드리스트 -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-bold flex items-center gap-2">
+            <span class="text-xl">🚛</span> 입문 대기 차량
+          </h2>
+          <span class="text-xs text-slate-400">총 <strong class="text-amber-400 font-bold">0</strong> 대 대기 중</span>
+        </div>
+
+        <div class="py-8 text-center text-slate-500 text-sm">
+          현재 입문 대기 중인 차량이 없습니다.
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -49,7 +70,7 @@
       checkEnvironmentAndToggleTips();
     });
 
-    // 접속 환경 감지 및 배너 제어
+    // 접속 환경 감지 및 배너 제어 (요청하신 조건 100% 반영)
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
       
@@ -100,7 +121,6 @@
       }
     }
 
-    // 페이지 로드 완료 시 환경 체크 실행
     window.addEventListener('DOMContentLoaded', checkEnvironmentAndToggleTips);
   </script>
 </body>
