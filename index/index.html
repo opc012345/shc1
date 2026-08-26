@@ -485,15 +485,6 @@
     var currentCancelTargetId = null;
     var currentCancelTargetPhone = null;
 
-    /* PWA 서비스 워커 등록 */
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').catch(function(err) {
-          console.log('SW 등록 실패:', err);
-        });
-      });
-    }
-
     /* PWA 앱 설치 지원 제어 */
     var deferredPrompt = null;
     var pwaBanner = document.getElementById('pwaBanner');
