@@ -1,12 +1,15 @@
-// sw.js 파일 내용
+const CACHE_NAME = 'shc-manager-v1';
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  return self.clients.claim();
+  event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
-  // 기본 통신 가로채기 설정
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
