@@ -186,7 +186,8 @@
     </div>
 
     <div class="flex items-center gap-1 sm:gap-4 text-xs font-semibold shrink-0 ml-auto">
-      <div id="current-time" class="text-slate-300 font-mono text-base hidden lg:block"></div>
+      <!-- 💡 모바일에서도 현재 시각이 보이도록 hidden 클래스 제거 -->
+      <div id="current-time" class="text-slate-300 font-mono text-xs sm:text-base"></div>
       
       <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
         <i class="fa-solid fa-bell-slash text-xs"></i>
@@ -475,6 +476,11 @@
       checkNotificationStatus();
       fetchData();
       subscribeRealtime();
+      
+      // 💡 모바일 환경 등에서 실시간 누락 방지를 위해 10초마다 자동 백그라운드 동기화 수행
+      setInterval(() => {
+        fetchData();
+      }, 10000);
     }
 
     function enableNotificationsAndSound() {
@@ -534,7 +540,6 @@
       const start = `${selectedDate}T00:00:00`;
       const end = `${selectedDate}T23:59:59`;
 
-      // 💡 우측 메인 목록은 기존 방식(가장 최근 등록이 맨 위로 오는 내림차순: ascending: false) 유지
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
@@ -596,13 +601,11 @@
         return;
       }
 
-      // 💡 좌측 대기 카드는 오래된 순서대로 정렬하기 위해 복사 후 역순 정렬 및 최대 10개 제한 적용
       const sortedWaiting = [...waitingList].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
       const top10Waiting = sortedWaiting.slice(0, 10);
 
       container.innerHTML = top10Waiting.map((item, index) => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        // 가장 최근에 등록된 항목에만 반짝이는 효과 부여
         const isLatest = index === top10Waiting.length - 1;
 
         return `
