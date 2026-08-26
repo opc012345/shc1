@@ -70,88 +70,118 @@
 </head>
 <body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans select-none">
 
-  <!-- 상단 헤더 -->
-  <header class="bg-slate-950 border-b border-slate-800 px-4 py-3 flex justify-between items-center shadow-lg shrink-0">
-    <div class="flex items-center gap-2.5">
-      <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xs tracking-tighter italic border border-red-500/50 shadow-md">
+  <!-- 1. 로그인 인증 화면 (초기 노출) -->
+  <div id="login-screen" class="fixed inset-0 bg-slate-950 flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center space-y-5">
+      <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xl tracking-tighter italic border-2 border-red-500/50 shadow-lg mx-auto">
         SHC
       </div>
       <div>
-        <h1 class="text-sm md:text-base font-black tracking-tight text-white leading-tight">신흥정밀 차량 통합 관리자</h1>
-        <p class="text-[10px] text-slate-400 font-bold">담당자/경비실 전용 컨트롤러</p>
+        <h2 class="text-xl font-black text-white">담당자 인증</h2>
+        <p class="text-xs text-slate-400 mt-1">관리자 비밀번호 4자리를 입력하세요.</p>
       </div>
-    </div>
-    <div class="flex items-center gap-2">
-      <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">연결 확인 중...</span>
-    </div>
-  </header>
 
-  <!-- 앱 설치 안내 카드 영역 (기기/환경 동적 제어) -->
-  <div id="pwa-install-wrapper" class="hidden p-3 md:px-6 pb-0 max-w-5xl mx-auto w-full">
-    <!-- 1. 스마트 팁 카드 -->
-    <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-3 text-center shadow-lg mb-2">
-      <p class="text-amber-300 text-xs font-bold mb-1.5 flex items-center justify-center gap-1">
-        💡 담당자 전용 스마트 팁!
-      </p>
-      <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 px-4 rounded-xl shadow-md text-xs md:text-sm flex items-center justify-center gap-2 transition-all">
-        <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 관리자 앱 설치
-      </button>
-    </div>
-
-    <!-- 2. 수동 설치 안내 버튼 -->
-    <button onclick="toggleManualGuide()" class="w-full bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs font-bold py-2 px-3.5 rounded-xl flex items-center justify-between transition-all">
-      <span class="flex items-center gap-1.5">
-        <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
-      </span>
-      <i id="guide-arrow" class="fa-solid fa-chevron-right text-[10px] transition-transform"></i>
-    </button>
-
-    <!-- 수동 설치 방법 상세 내용 -->
-    <div id="manual-guide-content" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1.5 text-[11px] text-slate-300 space-y-1">
-      <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
-      <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
-      <p class="font-bold text-amber-400 mt-1">💬 카카오톡 내부 브라우저인 경우</p>
-      <p>우측 하단 [⋮] 또는 [⋯] 버튼 클릭 ➔ [다른 브라우저로 열기] 후 설치 진행</p>
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <input type="password" id="pin-input" maxlength="4" required placeholder="PIN 번호 입력"
+               class="w-full bg-slate-950 border border-slate-700 rounded-xl py-3 text-center text-2xl font-mono tracking-widest text-amber-400 focus:outline-none focus:border-amber-500">
+        <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl shadow-lg transition-all text-sm">
+          로그인
+        </button>
+      </form>
     </div>
   </div>
 
-  <!-- 메인 콘솔 영역 -->
-  <main class="flex-1 max-w-5xl w-full mx-auto p-3 md:p-6 flex flex-col gap-4">
+  <!-- 2. 관리자 메인 화면 (로그인 후 표시) -->
+  <div id="admin-app" class="hidden flex-1 flex flex-col min-h-screen">
+    
+    <!-- 상단 헤더 -->
+    <header class="bg-slate-950 border-b border-slate-800 px-4 py-3 flex justify-between items-center shadow-lg shrink-0">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xs tracking-tighter italic border border-red-500/50 shadow-md">
+          SHC
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-black tracking-tight text-white leading-tight">신흥정밀 차량 통합 관리자</h1>
+          <p class="text-[10px] text-slate-400 font-bold">담당자/경비실 전용 컨트롤러</p>
+        </div>
+      </div>
 
-    <!-- 현황 요약 카운터 -->
-    <div class="grid grid-cols-3 gap-2 md:gap-4">
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
-        <p class="text-[11px] font-bold text-amber-400">입문 대기</p>
-        <p id="count-waiting" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
+      <div class="flex items-center gap-2">
+        <!-- 알림 설정 버튼 복원 -->
+        <button id="audio-notice" onclick="toggleAudio(event)" class="text-[11px] text-amber-400 bg-amber-950/50 border border-amber-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-900/50 transition-all cursor-pointer">
+          <i class="fa-solid fa-volume-high animate-bounce"></i> 음성 알림 활성화
+        </button>
+        <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">연결 확인 중...</span>
       </div>
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
-        <p class="text-[11px] font-bold text-blue-400">구역 내 작업중</p>
-        <p id="count-working" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
-      </div>
-      <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
-        <p class="text-[11px] font-bold text-emerald-400">출문 완료</p>
-        <p id="count-completed" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
-      </div>
-    </div>
+    </header>
 
-    <!-- 차량 관리 리스트 카드 -->
-    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col shadow-xl overflow-hidden">
-      <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
-        <h2 class="text-sm md:text-base font-black text-slate-200 flex items-center gap-2">
-          <i class="fa-solid fa-[#list-check] text-amber-500"></i> 실시간 차량 제어 목록
-        </h2>
-        <button onclick="fetchManagerData()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
-          <i class="fa-solid fa-rotate-right"></i> 새로고침
+    <!-- 앱 설치 안내 카드 영역 (환경 감지) -->
+    <div id="pwa-install-wrapper" class="hidden p-3 md:px-6 pb-0 max-w-5xl mx-auto w-full">
+      <!-- 스마트 팁 카드 -->
+      <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-3 text-center shadow-lg mb-2">
+        <p class="text-amber-300 text-xs font-bold mb-1.5 flex items-center justify-center gap-1">
+          💡 담당자 전용 스마트 팁!
+        </p>
+        <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 px-4 rounded-xl shadow-md text-xs md:text-sm flex items-center justify-center gap-2 transition-all">
+          <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 관리자 앱 설치
         </button>
       </div>
 
-      <!-- 리스트 스크롤 영역 -->
-      <div id="manager-list" class="flex-1 space-y-2.5 overflow-y-auto no-scrollbar pr-0.5">
-        <!-- JS로 동적 생성됨 -->
+      <!-- 수동 설치 안내 버튼 -->
+      <button onclick="toggleManualGuide()" class="w-full bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs font-bold py-2 px-3.5 rounded-xl flex items-center justify-between transition-all">
+        <span class="flex items-center gap-1.5">
+          <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
+        </span>
+        <i id="guide-arrow" class="fa-solid fa-chevron-right text-[10px] transition-transform"></i>
+      </button>
+
+      <!-- 수동 설치 상세 -->
+      <div id="manual-guide-content" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3 mt-1.5 text-[11px] text-slate-300 space-y-1">
+        <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
+        <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
+        <p class="font-bold text-amber-400 mt-1">💬 카카오톡 내부 브라우저인 경우</p>
+        <p>우측 하단 [⋮] 또는 [⋯] 버튼 클릭 ➔ [다른 브라우저로 열기] 후 설치 진행</p>
       </div>
     </div>
 
-  </main>
+    <!-- 메인 콘솔 영역 -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-3 md:p-6 flex flex-col gap-4">
+
+      <!-- 현황 요약 카운터 -->
+      <div class="grid grid-cols-3 gap-2 md:gap-4">
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
+          <p class="text-[11px] font-bold text-amber-400">입문 대기</p>
+          <p id="count-waiting" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
+          <p class="text-[11px] font-bold text-blue-400">구역 내 작업중</p>
+          <p id="count-working" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 text-center">
+          <p class="text-[11px] font-bold text-emerald-400">출문 완료</p>
+          <p id="count-completed" class="text-xl md:text-3xl font-black text-white mt-0.5">0</p>
+        </div>
+      </div>
+
+      <!-- 차량 관리 리스트 카드 -->
+      <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col shadow-xl overflow-hidden">
+        <div class="flex justify-between items-center mb-3 pb-2 border-b border-slate-800">
+          <h2 class="text-sm md:text-base font-black text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-amber-500"></i> 실시간 차량 제어 목록
+          </h2>
+          <button onclick="fetchManagerData()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
+            <i class="fa-solid fa-rotate-right"></i> 새로고침
+          </button>
+        </div>
+
+        <!-- 리스트 스크롤 영역 -->
+        <div id="manager-list" class="flex-1 space-y-2.5 overflow-y-auto no-scrollbar pr-0.5">
+          <!-- JS 동적 생성 -->
+        </div>
+      </div>
+
+    </main>
+  </div>
 
   <script>
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
@@ -159,32 +189,85 @@
 
     let _supabase = null;
     let deferredPrompt = null;
+    let isAudioEnabled = false;
+
+    // PIN 코드 설정 (기본값: 1234 - 필요시 변경 가능)
+    const ADMIN_PIN = "1234";
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
     });
 
-    // --- PWA 기기 및 브라우저 감지 로직 ---
+    // --- 로그인 관련 함수 ---
+    function handleLogin(e) {
+      e.preventDefault();
+      const inputPin = document.getElementById('pin-input').value;
+
+      if (inputPin === ADMIN_PIN) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('admin-app').classList.remove('hidden');
+        sessionStorage.setItem('shc_admin_auth', 'true');
+        initAdminApp();
+      } else {
+        alert('PIN 번호가 일치하지 않습니다.');
+        document.getElementById('pin-input').value = '';
+      }
+    }
+
+    // --- 알림 설정 관련 함수 ---
+    function toggleAudio(event) {
+      if (event) event.stopPropagation();
+
+      isAudioEnabled = !isAudioEnabled;
+      localStorage.setItem('shc_manager_audio', isAudioEnabled ? 'true' : 'false');
+      applyAudioUI(isAudioEnabled);
+
+      if (isAudioEnabled) {
+        speakTTS('담당자 음성 알림이 활성화되었습니다.');
+      }
+    }
+
+    function applyAudioUI(enabled) {
+      isAudioEnabled = enabled;
+      const notice = document.getElementById('audio-notice');
+      if (notice) {
+        if (enabled) {
+          notice.className = "text-[11px] text-emerald-400 bg-emerald-950/50 border border-emerald-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-emerald-900/50 transition-all cursor-pointer";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high"></i> 음성 알림 켜짐`;
+        } else {
+          notice.className = "text-[11px] text-amber-400 bg-amber-950/50 border border-amber-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-900/50 transition-all cursor-pointer";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high animate-bounce"></i> 음성 알림 활성화`;
+        }
+      }
+    }
+
+    function speakTTS(text) {
+      if ('speechSynthesis' in window && isAudioEnabled) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // --- PWA 환경 제어 ---
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
-      
       const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
       const installWrapper = document.getElementById('pwa-install-wrapper');
       const smartTipCard = document.getElementById('smart-tip-card');
 
-      // PC 브라우저이거나 이미 PWA 앱으로 접속한 경우 설치 영역 전체 숨김
       if (!isMobile || isStandalone) {
         if (installWrapper) installWrapper.classList.add('hidden');
         return;
       }
 
-      // 모바일 웹 브라우저 접속 환경일 때만 배너 노출
       if (installWrapper) installWrapper.classList.remove('hidden');
 
-      // 카카오톡/iOS 환경 체크하여 스마트 팁 배너 감춤
       const isKakao = ua.includes('kakaotalk');
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isOtherInApp = ua.includes('line') || ua.includes('inapp');
@@ -221,7 +304,22 @@
     }
 
     window.onload = () => {
+      // 이전 세션 인증 정보가 있으면 즉시 메인 표시
+      if (sessionStorage.getItem('shc_admin_auth') === 'true') {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('admin-app').classList.remove('hidden');
+        initAdminApp();
+      }
+    };
+
+    function initAdminApp() {
       checkEnvironmentAndToggleTips();
+
+      const savedAudio = localStorage.getItem('shc_manager_audio');
+      if (savedAudio === 'true') {
+        applyAudioUI(true);
+      }
+
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       const statusBadge = document.getElementById('connection-status');
@@ -232,7 +330,7 @@
 
       fetchManagerData();
       subscribeRealtime();
-    };
+    }
 
     async function fetchManagerData() {
       if (!_supabase) return;
@@ -260,7 +358,10 @@
       if (!_supabase) return;
       _supabase
         .channel('public:manager_control')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'dock_control' }, () => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'dock_control' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            speakTTS(`신규 차량 입문 신청. 차량번호 ${payload.new.car_number || ''}`);
+          }
           fetchManagerData();
         })
         .subscribe();
