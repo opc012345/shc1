@@ -599,9 +599,10 @@
         return;
       }
 
-      const top3Waiting = waitingList.slice(0, 3);
+      // 💡 기존 3개에서 최대 10개로 변경
+      const top10Waiting = waitingList.slice(0, 10);
 
-      container.innerHTML = top3Waiting.map((item, index) => {
+      container.innerHTML = top10Waiting.map((item, index) => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const isLatest = index === 0;
 
