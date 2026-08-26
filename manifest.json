@@ -1,8 +1,17 @@
 {
   "name": "신흥정밀 차량 입문 등록",
   "short_name": "입문등록",
-  "id": "driver-pwa-app",
+  "id": "driver-app-v1",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "standalone"
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc2626",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
 }
