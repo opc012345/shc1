@@ -27,7 +27,7 @@
         </span>
       </div>
 
-      <!-- PWA 설치 안내 영역 -->
+      <!-- PWA 설치 안내 전체 영역 -->
       <div id="pwa-install-wrapper" class="mb-4">
         <!-- 스마트팁 배너 -->
         <div id="smart-tip-card" class="bg-slate-900 border border-amber-500/50 rounded-xl p-3 text-center mb-2 shadow-lg">
@@ -70,7 +70,7 @@
       checkEnvironmentAndToggleTips();
     });
 
-    // 접속 환경 감지 및 배너 제어 (요청하신 조건 100% 반영)
+    // 접속 환경 감지 및 배너 제어
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
       
@@ -85,19 +85,19 @@
       const manualGuideBtn = document.getElementById('manual-guide-btn');
       const installWrapper = document.getElementById('pwa-install-wrapper');
 
-      // 조건 1: PC 접속 시 OR 어플(홈 화면 추가) 접속 시 ➔ 배너 전체 숨김
+      // 조건 1: PC 접속 시 OR 어플(홈 화면 추가) 접속 시 ➔ 스마트팁 ❌ / 아이폰 수동 ❌ (배너 전체 숨김)
       if (!isMobile || isStandalone) {
         if (installWrapper) installWrapper.style.display = 'none';
         return;
       }
 
-      // 조건 2: 모바일 안드로이드 크롬 접속 시 (카카오톡 제외) ➔ 둘 다 표시
+      // 조건 2: 모바일 안드로이드 크롬 접속 시 (카카오톡 제외) ➔ 스마트팁 ⭕ / 아이폰 수동 ⭕ (둘 다 표시)
       if (isAndroid && isChrome && !isKakao) {
         if (installWrapper) installWrapper.style.display = 'block';
         if (smartTipCard) smartTipCard.style.display = 'block';
         if (manualGuideBtn) manualGuideBtn.style.display = 'flex';
       } 
-      // 조건 3: 모바일 카카오톡 / 아이폰 접속 시 ➔ 수동 안내만 표시
+      // 조건 3: 모바일 카카오톡 / 아이폰 접속 시 ➔ 스마트팁 ❌ / 아이폰 수동 ⭕ (수동 안내만 표시)
       else {
         if (installWrapper) installWrapper.style.display = 'block';
         if (smartTipCard) smartTipCard.style.display = 'none';
