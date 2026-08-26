@@ -534,12 +534,13 @@
       const start = `${selectedDate}T00:00:00`;
       const end = `${selectedDate}T23:59:59`;
 
+      // 💡 가장 먼저 등록된 차량이 위쪽(#1), 신규 등록된 차량이 아래쪽으로 쌓이도록 ascending: true 설정
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', start)
         .lte('created_at', end)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Fetch error:', error);
@@ -550,7 +551,6 @@
       renderData();
     }
 
-    // 💡 실시간(Realtime) 수신 처리 보완
     function subscribeRealtime() {
       if (!_supabase) return;
       const statusBadge = document.getElementById('realtime-status');
@@ -561,15 +561,12 @@
           'postgres_changes',
           { event: '*', schema: 'public', table: 'dock_control' },
           async (payload) => {
-            // 신규 차량 입력 시에만 음성/상단바 알림 실행
             if (payload.eventType === 'INSERT') {
               const newCar = payload.new;
               playNotificationSound();
               showDesktopNotification(newCar);
               startTitleFlash();
             }
-            
-            // 데이터베이스에 변경(INSERT, UPDATE, DELETE) 발생 시 화면 최신화 실행
             await fetchData();
           }
         )
@@ -599,12 +596,13 @@
         return;
       }
 
-      // 💡 기존 3개에서 최대 10개로 변경
+      // 💡 오래된 순서대로 최대 10개 표시 (가장 아래에 추가된 최근 항목이 맨 마지막 #10 혹은 그 이전 순번으로 위치)
       const top10Waiting = waitingList.slice(0, 10);
 
       container.innerHTML = top10Waiting.map((item, index) => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const isLatest = index === 0;
+        // 가장 최근(아래쪽에 새로 추가된) 카드에만 반짝이는 효과 부여
+        const isLatest = index === top10Waiting.length - 1;
 
         return `
           <div class="bg-slate-900 text-white p-5 rounded-2xl border-2 ${isLatest ? 'border-amber-500/80 flash-alert' : 'border-slate-800'} shadow-xl transition-all duration-300 relative overflow-hidden">
