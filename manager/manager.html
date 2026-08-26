@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>차량 입출문 시스템 - 신흥정밀</title>
+  <title>신흥정밀 차량 입문 신청</title>
   
-  <!-- PWA 메타태그 및 동적 아이콘 설정 -->
+  <!-- PWA 메타태그 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SHC 차량관제">
-  <link rel="manifest" href="./manifest.json">
+  <meta name="apple-mobile-web-app-title" content="신흥정밀 입문신청">
   
+  <!-- SHC 원형 로고 아이콘 -->
   <link rel="apple-touch-icon" id="app-icon-apple" href="">
   <link rel="icon" id="app-icon-fav" href="">
 
+  <!-- 동적 PWA Manifest 및 Service Worker 자동 생성 스크립트 -->
   <script>
-    // SHC 로고 생성 및 백그라운드 서비스 워커 등록
     const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
     const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
     const logoUrl = URL.createObjectURL(logoBlob);
@@ -26,696 +26,254 @@
       document.getElementById('app-icon-fav').href = logoUrl;
     });
 
+    const manifest = {
+      name: "신흥정밀 차량 입문 신청",
+      short_name: "입문신청",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#0f172a",
+      theme_color: "#0f172a",
+      icons: [{
+        src: logoUrl,
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW register failed:', err));
+      const swCode = `
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('activate', (e) => self.clients.claim());
+        self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(err => console.log('SW register failed:', err));
     }
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
-    @keyframes pulse-border {
-      0%, 100% { border-color: rgba(225, 29, 72, 1); box-shadow: 0 0 20px rgba(225, 29, 72, 0.5); }
-      50% { border-color: rgba(225, 29, 72, 0.3); box-shadow: 0 0 0px rgba(225, 29, 72, 0); }
-    }
-    .flash-alert {
-      animation: pulse-border 1.5s infinite;
-    }
-
-    /* =========================================================
-       📱 모바일 환경(768px 이하) 반응형 카드 변환 레이아웃
-       ========================================================= */
-    @media (max-width: 768px) {
-      .overflow-x-auto { overflow-x: visible !important; }
-      table, thead, tbody, th, td, tr { display: block; }
-      thead { display: none; }
-
-      tbody#table-body {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding: 12px;
-        background-color: #f8fafc;
-      }
-
-      tbody#table-body tr {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 14px 16px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        position: relative;
-      }
-
-      tbody#table-body td {
-        padding: 0 !important;
-        border: none !important;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100% !important;
-        text-align: left !important;
-      }
-
-      tbody#table-body td:nth-child(1) {
-        border-bottom: 1px solid #f1f5f9 !important;
-        padding-bottom: 8px !important;
-        justify-content: flex-start;
-        gap: 8px;
-      }
-      tbody#table-body td:nth-child(1)::before {
-        content: "선택";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(2)::before {
-        content: "입문일시";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(3)::before {
-        content: "차량번호";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(4)::before {
-        content: "운전자 성함";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(5)::before {
-        content: "연락처";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(6)::before {
-        content: "상태";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(7) {
-        border-top: 1px solid #f1f5f9 !important;
-        padding-top: 10px !important;
-        margin-top: 4px;
-        justify-content: space-between;
-        gap: 6px;
-      }
-      tbody#table-body td:nth-child(7)::before {
-        content: "관리";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800" onclick="stopTitleFlash()">
+<body class="bg-slate-900 text-white min-h-screen flex flex-col font-sans select-none">
 
-  <!-- 담당자 비밀번호 로그인 모달 -->
-  <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
-      <div class="text-center space-y-2">
-        <div class="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded mb-1">SHC</div>
-        <h2 class="text-xl font-bold text-slate-900">담당자 관제 시스템 접속</h2>
-        <p class="text-xs text-slate-500">접속 비밀번호를 입력해 주세요.</p>
+  <!-- 상단 헤더 -->
+  <header class="bg-slate-950 border-b border-slate-800 px-4 py-3.5 flex justify-between items-center shadow-lg shrink-0">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xs tracking-tighter italic border border-red-500/50 shadow-md">
+        SHC
+      </div>
+      <div>
+        <h1 class="text-base font-black tracking-tight text-white leading-tight">신흥정밀 차량 입문 시스템</h1>
+        <p class="text-[11px] text-slate-400 font-bold">기사용 등록 단말기</p>
+      </div>
+    </div>
+    <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">연결 확인 중...</span>
+  </header>
+
+  <!-- 메인 영역 -->
+  <main class="flex-1 max-w-lg w-full mx-auto p-4 flex flex-col justify-between gap-4">
+
+    <!-- 앱 설치 안내 카드 영역 (현장용 동일 적용) -->
+    <div id="pwa-install-wrapper" class="hidden w-full">
+      <!-- 1. 스마트 팁 카드 -->
+      <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-3.5 text-center shadow-lg mb-2.5">
+        <p class="text-amber-300 text-xs font-bold mb-1.5 flex items-center justify-center gap-1">
+          💡 기사님 전용 스마트 팁!
+        </p>
+        <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2.5 px-4 rounded-xl shadow-md text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
+          <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
+        </button>
       </div>
 
-      <form onsubmit="handleLogin(event)" class="space-y-4">
+      <!-- 2. 수동 설치 안내 버튼 -->
+      <button onclick="toggleManualGuide()" class="w-full bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs font-bold py-2 px-3.5 rounded-xl flex items-center justify-between transition-all">
+        <span class="flex items-center gap-1.5">
+          <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
+        </span>
+        <i id="guide-arrow" class="fa-solid fa-chevron-right text-[10px] transition-transform"></i>
+      </button>
+
+      <!-- 수동 설치 방법 상세 내용 -->
+      <div id="manual-guide-content" class="hidden bg-slate-950 border border-slate-800 rounded-xl p-3 mt-2 text-[11px] text-slate-300 space-y-1.5">
+        <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
+        <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
+        <p class="font-bold text-amber-400 mt-1.5">💬 카카오톡 내부 브라우저인 경우</p>
+        <p>우측 하단 [⋮] 또는 [⋯] 버튼 클릭 ➔ [다른 브라우저로 열기] 후 설치 진행</p>
+      </div>
+    </div>
+
+    <!-- 입문 신청 폼 -->
+    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-2xl flex-1 flex flex-col justify-center">
+      <div class="mb-5 text-center">
+        <h2 class="text-xl font-black text-white">차량 입문 신청서</h2>
+        <p class="text-xs text-slate-400 mt-1">도착하신 기사님은 정보를 입력 후 신청해 주세요.</p>
+      </div>
+
+      <form id="entry-form" onsubmit="submitForm(event)" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">비밀번호</label>
-          <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">차량 번호</label>
+          <div class="relative">
+            <i class="fa-solid fa-truck absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="text" id="car_number" required placeholder="예: 12가 3456" 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-3 text-sm font-bold text-amber-400 placeholder-slate-600 focus:outline-none focus:border-amber-500">
+          </div>
         </div>
 
-        <div class="flex items-center justify-between pt-1">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
-            <span class="text-xs font-bold text-slate-600">로그인 상태 유지</span>
-          </label>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">운전자 성함</label>
+          <div class="relative">
+            <i class="fa-solid fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="text" id="driver_name" required placeholder="홍길동" 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-3 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-amber-500">
+          </div>
         </div>
 
-        <button type="submit" id="login-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md mt-2">
-          로그인
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">연락처</label>
+          <div class="relative">
+            <i class="fa-solid fa-phone absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="tel" id="phone_number" required placeholder="010-0000-0000" 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl py-3 pl-10 pr-3 text-sm font-mono font-bold text-white placeholder-slate-600 focus:outline-none focus:border-amber-500">
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" 
+                class="w-full mt-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-black py-3.5 px-4 rounded-xl shadow-lg transition-all text-base flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-paper-plane"></i> 입문 신청하기
         </button>
       </form>
-
-      <div id="login-error-msg" class="hidden text-xs text-rose-500 font-bold text-center bg-rose-50 p-3 rounded-xl border border-rose-100"></div>
-    </div>
-  </div>
-
-  <!-- 상단 네비게이션 바 -->
-  <nav class="bg-slate-900 text-white px-2.5 sm:px-6 py-2.5 flex flex-wrap justify-between items-center shadow-lg gap-1.5 sm:gap-2">
-    <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-      <span class="bg-red-600 text-white font-black text-[11px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shrink-0">SHC</span>
-      <h1 class="text-sm sm:text-2xl font-black tracking-tight whitespace-nowrap truncate">차량 입출문 시스템</h1>
-      <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-500/30 font-medium whitespace-nowrap shrink-0">연결 중...</span>
     </div>
 
-    <div class="flex items-center gap-1 sm:gap-4 text-xs font-semibold shrink-0 ml-auto">
-      <div id="current-time" class="text-slate-300 font-mono text-base hidden lg:block"></div>
-      
-      <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
-        <i class="fa-solid fa-bell-slash text-xs"></i>
-        <span class="hidden md:inline">알림 권한 요청</span>
-      </button>
-
-      <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-emerald-600 hover:bg-emerald-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
-        <i class="fa-solid fa-volume-high text-xs"></i>
-        <span id="sound-status-text" class="hidden md:inline">소리 On</span>
-      </button>
-
-      <button onclick="fetchData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 sm:p-2.5 rounded-xl transition" title="새로고침">
-        <i class="fa-solid fa-rotate-right text-xs"></i>
-      </button>
-
-      <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
-        <i class="fa-solid fa-right-from-bracket text-xs"></i>
-        <span class="hidden md:inline">로그아웃</span>
-      </button>
+    <!-- 하단 유의사항 -->
+    <div class="text-center text-[11px] text-slate-500 font-medium">
+      신청 완료 후 현황판 대기 순번에 따라 입문 진행됩니다.
     </div>
-  </nav>
-
-  <!-- 메인 컨텐츠 영역 -->
-  <main class="w-full px-3 sm:px-6 py-4 sm:py-6 space-y-6">
-
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-
-      <!-- 좌측 대기 차량 정보 카드 목록 -->
-      <div class="xl:col-span-1 space-y-4">
-        <div id="waiting-cards-container" class="space-y-4">
-        </div>
-      </div>
-
-      <!-- 우측 관제 본문 -->
-      <div class="xl:col-span-4 space-y-6">
-
-        <!-- 현황 요약 카드 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase whitespace-nowrap">금일 총 입문</p>
-              <p id="stat-total" class="text-2xl sm:text-3xl font-black text-slate-900 mt-1">0</p>
-            </div>
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg sm:text-xl shrink-0"><i class="fa-solid fa-truck"></i></div>
-          </div>
-          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase whitespace-nowrap break-keep">구역 내 대기중</p>
-              <p id="stat-waiting" class="text-2xl sm:text-3xl font-black text-amber-600 mt-1">0</p>
-            </div>
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg sm:text-xl shrink-0"><i class="fa-solid fa-clock"></i></div>
-          </div>
-          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase whitespace-nowrap">출문 완료</p>
-              <p id="stat-completed" class="text-2xl sm:text-3xl font-black text-emerald-600 mt-1">0</p>
-            </div>
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg sm:text-xl shrink-0"><i class="fa-solid fa-check"></i></div>
-          </div>
-          <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
-            <div>
-              <p class="text-xs font-bold text-slate-400 uppercase whitespace-nowrap">입문 취소</p>
-              <p id="stat-cancelled" class="text-2xl sm:text-3xl font-black text-rose-600 mt-1">0</p>
-            </div>
-            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg sm:text-xl shrink-0"><i class="fa-solid fa-ban"></i></div>
-          </div>
-        </div>
-
-        <!-- 검색 및 컨트롤 영역 -->
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
-          <div class="relative w-full md:w-96">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
-            <input type="text" id="search-input" onkeyup="filterData()" placeholder="차량번호 / 기사명 / 연락처 검색" class="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
-          </div>
-          
-          <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-            <div class="inline-flex bg-slate-100 p-1.5 rounded-xl text-xs font-bold">
-              <button onclick="setStatusFilter('ALL')" id="filter-all" class="px-4 py-2 rounded-lg bg-slate-900 text-white transition">전체</button>
-              <button onclick="setStatusFilter('대기중')" id="filter-waiting" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">대기중</button>
-              <button onclick="setStatusFilter('출문완료')" id="filter-completed" class="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">출문완료</button>
-            </div>
-            
-            <input type="date" id="date-filter" onchange="fetchData()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none">
-            
-            <div class="flex items-center gap-2">
-              <button onclick="deleteSelectedRecords()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
-                <i class="fa-solid fa-trash-can"></i> 선택 삭제
-              </button>
-
-              <button onclick="downloadExcel()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-sm">
-                <i class="fa-solid fa-file-excel"></i> 엑셀 다운로드
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 데이터 목록 -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-base">
-              <thead class="bg-slate-50 text-slate-500 font-bold text-xs uppercase border-b border-slate-200">
-                <tr>
-                  <th class="p-4 w-14 text-center">
-                    <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-                  </th>
-                  <th class="p-4">입문일시</th>
-                  <th class="p-4">차량번호</th>
-                  <th class="p-4">운전자 성함</th>
-                  <th class="p-4">연락처</th>
-                  <th class="p-4">상태</th>
-                  <th class="p-4 text-center">관리</th>
-                </tr>
-              </thead>
-              <tbody id="table-body" class="divide-y divide-slate-100">
-                <tr>
-                  <td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">데이터를 불러오는 중입니다...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
   </main>
 
   <script>
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
-    
-    const MANAGER_PASSWORD = 'cnfgkxla';
+    const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i';
 
     let _supabase = null;
-    let allRecords = [];
-    let currentStatusFilter = 'ALL';
-    let isSoundOn = true;
-    let originalTitle = "차량 입출문 시스템 - 신흥정밀";
-    let titleInterval = null;
-    let notificationQueue = [];
+    let deferredPrompt = null;
 
-    window.onload = async () => {
-      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
 
-      document.getElementById('date-filter').valueAsDate = new Date();
-      updateClock();
-      setInterval(updateClock, 1000);
+    // --- PWA 기기 및 브라우저 감지 로직 ---
+    function checkEnvironmentAndToggleTips() {
+      const ua = navigator.userAgent.toLowerCase();
+      
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-      const isAuthLocal = localStorage.getItem('shc_manager_auth') === 'true';
-      const isAuthSession = sessionStorage.getItem('shc_manager_auth') === 'true';
+      const installWrapper = document.getElementById('pwa-install-wrapper');
+      const smartTipCard = document.getElementById('smart-tip-card');
 
-      if (isAuthLocal || isAuthSession) {
-        hideLoginModal();
-        initSystem();
+      // PC 또는 앱(standalone) 환경 접속 시 설치 영역 전체 숨김
+      if (!isMobile || isStandalone) {
+        if (installWrapper) installWrapper.classList.add('hidden');
+        return;
+      }
+
+      // 모바일 웹 브라우저 접속 시 노출
+      if (installWrapper) installWrapper.classList.remove('hidden');
+
+      // 카카오톡 / iOS 환경에서는 스마트팁 배너 숨김 처리
+      const isKakao = ua.includes('kakaotalk');
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isOtherInApp = ua.includes('line') || ua.includes('inapp');
+
+      if ((isKakao || isIOS || isOtherInApp) && smartTipCard) {
+        smartTipCard.classList.add('hidden');
+      }
+    }
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('앱 설치 완료');
+          }
+          deferredPrompt = null;
+        });
       } else {
-        showLoginModal();
+        toggleManualGuide(true);
+      }
+    }
+
+    function toggleManualGuide(forceOpen = false) {
+      const guide = document.getElementById('manual-guide-content');
+      const arrow = document.getElementById('guide-arrow');
+      if (forceOpen || guide.classList.contains('hidden')) {
+        guide.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-90');
+      } else {
+        guide.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-90');
+      }
+    }
+
+    window.onload = () => {
+      checkEnvironmentAndToggleTips();
+      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      
+      const statusBadge = document.getElementById('connection-status');
+      if (_supabase) {
+        statusBadge.innerText = '시스템 정상';
+        statusBadge.className = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold';
       }
     };
 
-    function showLoginModal() {
-      document.getElementById('login-modal').classList.remove('hidden');
-    }
-
-    function hideLoginModal() {
-      document.getElementById('login-modal').classList.add('hidden');
-    }
-
-    function handleLogin(e) {
+    async function submitForm(e) {
       e.preventDefault();
-      const passwordInput = document.getElementById('login-password').value;
-      const rememberMe = document.getElementById('remember-me').checked;
-      const errorMsg = document.getElementById('login-error-msg');
-
-      if (passwordInput === MANAGER_PASSWORD) {
-        if (rememberMe) {
-          localStorage.setItem('shc_manager_auth', 'true');
-        } else {
-          sessionStorage.setItem('shc_manager_auth', 'true');
-        }
-        errorMsg.classList.add('hidden');
-        hideLoginModal();
-        initSystem();
-      } else {
-        errorMsg.innerText = '비밀번호가 올바르지 않습니다.';
-        errorMsg.classList.remove('hidden');
-      }
-    }
-
-    function handleLogout() {
-      if (confirm('로그아웃 하시겠습니까?')) {
-        localStorage.removeItem('shc_manager_auth');
-        sessionStorage.removeItem('shc_manager_auth');
-        document.getElementById('login-password').value = '';
-        showLoginModal();
-      }
-    }
-
-    function initSystem() {
-      checkNotificationStatus();
-      fetchData();
-      subscribeRealtime();
-    }
-
-    function enableNotificationsAndSound() {
-      if ('speechSynthesis' in window) {
-        const testUtterance = new SpeechSynthesisUtterance('');
-        window.speechSynthesis.speak(testUtterance);
-      }
-
-      if ("Notification" in window) {
-        Notification.requestPermission().then(permission => {
-          checkNotificationStatus();
-          if (permission === "granted") {
-            const testNoti = new Notification("알림이 활성화되었습니다", { 
-              body: "신규 차량 입문 시 백그라운드에서도 알림을 발송합니다.",
-              icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png'
-            });
-            testNoti.onclick = (e) => { e.preventDefault(); window.focus(); };
-          } else {
-            alert("알림 권한이 거부되었습니다.");
-          }
-        });
-      }
-    }
-
-    function checkNotificationStatus() {
-      const btn = document.getElementById('noti-permission-btn');
-      if ("Notification" in window && Notification.permission === "granted") {
-        btn.className = "bg-slate-800 text-slate-300 p-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1 cursor-default";
-        btn.innerHTML = `<i class="fa-solid fa-bell text-emerald-400 text-xs"></i> <span class="hidden md:inline">알림 권한 완료</span>`;
-      } else {
-        btn.className = "bg-amber-600 hover:bg-amber-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold flex items-center gap-1 animate-pulse";
-        btn.innerHTML = `<i class="fa-solid fa-bell-slash text-xs"></i> <span class="hidden md:inline">알림 권한 필요</span>`;
-      }
-    }
-
-    function updateClock() {
-      const el = document.getElementById('current-time');
-      if (el) el.innerText = new Date().toLocaleString('ko-KR');
-    }
-
-    function toggleSound() {
-      isSoundOn = !isSoundOn;
-      const btnText = document.getElementById('sound-status-text');
-      const btn = document.getElementById('sound-toggle-btn');
-      if(isSoundOn) {
-        if (btnText) btnText.innerText = "소리 On";
-        btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1";
-      } else {
-        if (btnText) btnText.innerText = "소리 Off";
-        btn.className = "bg-slate-600 hover:bg-slate-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1";
-      }
-    }
-
-    async function fetchData() {
       if (!_supabase) return;
-      const selectedDate = document.getElementById('date-filter').value;
-      const start = `${selectedDate}T00:00:00`;
-      const end = `${selectedDate}T23:59:59`;
 
-      const { data, error } = await _supabase
+      const btn = document.getElementById('submit-btn');
+      const carNumber = document.getElementById('car_number').value.trim();
+      const driverName = document.getElementById('driver_name').value.trim();
+      const phoneNumber = document.getElementById('phone_number').value.trim();
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 신청 중...`;
+
+      const { error } = await _supabase
         .from('dock_control')
-        .select('*')
-        .gte('created_at', start)
-        .lte('created_at', end)
-        .order('created_at', { ascending: false });
+        .insert([
+          { 
+            car_number: carNumber, 
+            driver_name: driverName, 
+            phone_number: phoneNumber,
+            status: '대기중' 
+          }
+        ]);
+
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> 입문 신청하기`;
 
       if (error) {
-        console.error('Fetch error:', error);
-        return;
+        alert('신청 실패: ' + error.message);
+      } else {
+        alert('입문 신청이 정상 완료되었습니다!');
+        document.getElementById('entry-form').reset();
       }
-
-      allRecords = data || [];
-      renderData();
-    }
-
-    function subscribeRealtime() {
-      if (!_supabase) return;
-      const statusBadge = document.getElementById('realtime-status');
-
-      _supabase
-        .channel('public:dock_control')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'dock_control' },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              const newCar = payload.new;
-              playNotificationSound();
-              showDesktopNotification(newCar);
-              startTitleFlash();
-            }
-            fetchData();
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            statusBadge.innerText = '실시간 연결됨';
-            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-500/30 font-medium whitespace-nowrap shrink-0';
-          } else {
-            statusBadge.innerText = '실시간 재연결 중';
-            statusBadge.className = 'bg-rose-500/20 text-rose-400 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-rose-500/30 font-medium whitespace-nowrap shrink-0';
-          }
-        });
-    }
-
-    function updateWaitingCards(waitingList) {
-      const container = document.getElementById('waiting-cards-container');
-
-      if (waitingList.length === 0) {
-        container.innerHTML = `
-          <div class="bg-slate-900 text-white p-6 rounded-2xl border-2 border-slate-800 shadow-xl text-center space-y-2">
-            <div class="w-10 h-10 mx-auto rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
-              <i class="fa-solid fa-truck-slash"></i>
-            </div>
-            <p class="text-sm font-bold text-slate-400">현재 대기 중인 차량이 없습니다.</p>
-          </div>
-        `;
-        return;
-      }
-
-      const top3Waiting = waitingList.slice(0, 3);
-
-      container.innerHTML = top3Waiting.map((item, index) => {
-        const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const isLatest = index === 0;
-
-        return `
-          <div class="bg-slate-900 text-white p-5 rounded-2xl border-2 ${isLatest ? 'border-amber-500/80 flash-alert' : 'border-slate-800'} shadow-xl transition-all duration-300 relative overflow-hidden">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-              <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                ${isLatest ? '<span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>' : ''}
-                대기 차량 #${index + 1}
-              </span>
-              <span class="text-xs font-mono text-slate-400">${timeStr}</span>
-            </div>
-
-            <div class="space-y-3">
-              <div>
-                <p class="text-[11px] text-slate-400 font-medium">차량 번호</p>
-                <p class="text-2xl font-black text-amber-400 tracking-tight mt-0.5">${item.car_number || '-'}</p>
-              </div>
-              
-              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
-                <div>
-                  <p class="text-[11px] text-slate-400 font-medium">운전자 성함</p>
-                  <p class="text-sm font-bold text-slate-200 mt-0.5">${item.driver_name || '-'}</p>
-                </div>
-                <div>
-                  <p class="text-[11px] text-slate-400 font-medium">연락처</p>
-                  <p class="text-xs font-mono text-slate-300 mt-1">${item.phone_number || '-'}</p>
-                </div>
-              </div>
-
-              <div class="pt-1">
-                <button onclick="updateStatus('${item.id}', '출문완료')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 rounded-lg transition text-xs shadow-sm">
-                  <i class="fa-solid fa-check mr-1"></i> 바로 출문 처리
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function playNotificationSound() {
-      if (!isSoundOn) return;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance('차량이 입문 했습니다');
-        utterance.lang = 'ko-KR';
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
-    function showDesktopNotification(carData) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        if (notificationQueue.length >= 3) {
-          const oldest = notificationQueue.shift();
-          try { oldest.close(); } catch(e) {}
-        }
-
-        const noti = new Notification(`🚨 [신규 입문] ${carData.car_number || '차량'}`, {
-          body: `운전자: ${carData.driver_name || '미기재'} | 연락처: ${carData.phone_number || '미기재'}`,
-          icon: 'https://cdn-icons-png.flaticon.com/512/2555/2555013.png',
-          requireInteraction: true
-        });
-
-        noti.onclick = (e) => { e.preventDefault(); window.focus(); };
-        notificationQueue.push(noti);
-      }
-    }
-
-    function startTitleFlash() {
-      if (titleInterval) clearInterval(titleInterval);
-      let isAlt = false;
-      titleInterval = setInterval(() => {
-        document.title = isAlt ? originalTitle : "🚨 [신규 입문!] 확인 필요";
-        isAlt = !isAlt;
-      }, 1000);
-    }
-
-    function stopTitleFlash() {
-      if (titleInterval) {
-        clearInterval(titleInterval);
-        titleInterval = null;
-        document.title = originalTitle;
-      }
-    }
-
-    function renderData() {
-      const tbody = document.getElementById('table-body');
-      const query = document.getElementById('search-input').value.toLowerCase();
-
-      const waitingList = allRecords.filter(i => (i.status || '대기중') === '대기중');
-      
-      updateWaitingCards(waitingList);
-
-      let filtered = allRecords.filter(item => {
-        const matchesStatus = currentStatusFilter === 'ALL' || item.status === currentStatusFilter;
-        const matchesSearch = (item.car_number && item.car_number.toLowerCase().includes(query)) ||
-                              (item.driver_name && item.driver_name.toLowerCase().includes(query)) ||
-                              (item.phone_number && item.phone_number.toLowerCase().includes(query));
-        return matchesStatus && matchesSearch;
-      });
-
-      document.getElementById('stat-total').innerText = allRecords.length;
-      document.getElementById('stat-waiting').innerText = waitingList.length;
-      document.getElementById('stat-completed').innerText = allRecords.filter(i => i.status === '출문완료').length;
-      document.getElementById('stat-cancelled').innerText = allRecords.filter(i => i.status === '입문취소').length;
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">조회된 데이터가 없습니다.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = filtered.map(item => {
-        const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        const status = item.status || '대기중';
-        
-        let statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700">대기중</span>';
-        if(status === '출문완료') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">출문완료</span>';
-        if(status === '입문취소') statusBadge = '<span class="px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">입문취소</span>';
-
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-4 text-center">
-              <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
-            </td>
-            <td class="p-4 font-mono text-slate-600 font-semibold text-base">${timeStr}</td>
-            <td class="p-4 font-black text-slate-900 text-lg">${item.car_number || '-'}</td>
-            <td class="p-4 font-bold text-slate-800 text-base">${item.driver_name || '-'}</td>
-            <td class="p-4 text-slate-600 font-mono text-base font-medium">${item.phone_number || '-'}</td>
-            <td class="p-4">${statusBadge}</td>
-            <td class="p-4 text-center">
-              ${status === '대기중' ? `
-                <button onclick="updateStatus('${item.id}', '출문완료')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm">출문</button>
-                <button onclick="updateStatus('${item.id}', '입문취소')" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition ml-1">취소</button>
-              ` : `<span class="text-xs text-slate-400 font-semibold">처리완료</span>`}
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function toggleSelectAll(master) {
-      const checkboxes = document.querySelectorAll('.row-checkbox');
-      checkboxes.forEach(cb => cb.checked = master.checked);
-    }
-
-    async function deleteSelectedRecords() {
-      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
-      if (checkedBoxes.length === 0) {
-        alert('삭제할 항목을 선택해 주세요.');
-        return;
-      }
-
-      if (!confirm(`선택한 ${checkedBoxes.length}건의 데이터를 삭제하시겠습니까?`)) return;
-
-      const selectedIds = Array.from(checkedBoxes).map(cb => cb.value);
-      const { error } = await _supabase.from('dock_control').delete().in('id', selectedIds);
-
-      if (error) alert('삭제 실패: ' + error.message);
-      else fetchData();
-    }
-
-    async function updateStatus(id, newStatus) {
-      const { error } = await _supabase.from('dock_control').update({ status: newStatus }).eq('id', id);
-      if (error) alert('상태 변경 실패: ' + error.message);
-      else fetchData();
-    }
-
-    function setStatusFilter(status) {
-      currentStatusFilter = status;
-      ['all', 'waiting', 'completed'].forEach(s => {
-        const btn = document.getElementById(`filter-${s}`);
-        if ((s === 'all' && status === 'ALL') || (s === 'waiting' && status === '대기중') || (s === 'completed' && status === '출문완료')) {
-          btn.className = "px-4 py-2 rounded-lg bg-slate-900 text-white transition";
-        } else {
-          btn.className = "px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 transition";
-        }
-      });
-      renderData();
-    }
-
-    function filterData() { renderData(); }
-
-    function downloadExcel() {
-      if(allRecords.length === 0) {
-        alert('다운로드할 데이터가 없습니다.');
-        return;
-      }
-      
-      const excelData = allRecords.map(item => ({
-        '입문일시': new Date(item.created_at).toLocaleString('ko-KR'),
-        '차량번호': item.car_number || '-',
-        '운전자 성함': item.driver_name || '-',
-        '연락처': item.phone_number || '-',
-        '상태': item.status || '대기중'
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "입문현황");
-
-      const selectedDate = document.getElementById('date-filter').value;
-      XLSX.writeFile(workbook, `차량입문현황_${selectedDate}.xlsx`);
     }
   </script>
 </body>
