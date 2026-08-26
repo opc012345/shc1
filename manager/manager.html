@@ -32,7 +32,7 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tailwindcss-cdn@3.4.10/tailwindcss.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -534,13 +534,13 @@
       const start = `${selectedDate}T00:00:00`;
       const end = `${selectedDate}T23:59:59`;
 
-      // 💡 가장 먼저 등록된 차량이 위쪽(#1), 신규 등록된 차량이 아래쪽으로 쌓이도록 ascending: true 설정
+      // 💡 우측 메인 목록은 기존 방식(가장 최근 등록이 맨 위로 오는 내림차순: ascending: false) 유지
       const { data, error } = await _supabase
         .from('dock_control')
         .select('*')
         .gte('created_at', start)
         .lte('created_at', end)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Fetch error:', error);
@@ -596,12 +596,13 @@
         return;
       }
 
-      // 💡 오래된 순서대로 최대 10개 표시 (가장 아래에 추가된 최근 항목이 맨 마지막 #10 혹은 그 이전 순번으로 위치)
-      const top10Waiting = waitingList.slice(0, 10);
+      // 💡 좌측 대기 카드는 오래된 순서대로 정렬하기 위해 복사 후 역순 정렬 및 최대 10개 제한 적용
+      const sortedWaiting = [...waitingList].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      const top10Waiting = sortedWaiting.slice(0, 10);
 
       container.innerHTML = top10Waiting.map((item, index) => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        // 가장 최근(아래쪽에 새로 추가된) 카드에만 반짝이는 효과 부여
+        // 가장 최근에 등록된 항목에만 반짝이는 효과 부여
         const isLatest = index === top10Waiting.length - 1;
 
         return `
