@@ -3,7 +3,7 @@
   "short_name": "입문등록",
   "id": "driver-app-v1",
   "start_url": "./index.html",
-  "scope": "./",
+  "scope": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#dc2626",
