@@ -499,40 +499,43 @@
     var pwaBanner = document.getElementById('pwaBanner');
     var btnPwaInstall = document.getElementById('btnPwaInstall');
 
-    window.addEventListener('beforeinstallprompt', function(e) {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (pwaBanner) {
-        pwaBanner.classList.add('show');
-      }
-    });
-
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
-    if (isIOS && !isStandalone) {
-      if (pwaBanner) {
-        pwaBanner.classList.add('show');
-        btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
-        btnPwaInstall.onclick = function() {
-          alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
-        };
-      }
-    }
-
-    if (btnPwaInstall && !isIOS) {
-      btnPwaInstall.addEventListener('click', async function() {
-        if (!deferredPrompt) {
-          alert("이미 앱이 설치되어 있거나 브라우저 환경상 자동 설치를 지원하지 않습니다.");
-          return;
+    // 앱(standalone) 상태가 아닐 때만 설치 배너 이벤트를 등록
+    if (!isStandalone) {
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (pwaBanner) {
+          pwaBanner.classList.add('show');
         }
-        deferredPrompt.prompt();
-        var choiceResult = await deferredPrompt.userChoice;
-        if (choiceResult.outcome === 'accepted') {
-          pwaBanner.classList.remove('show');
-        }
-        deferredPrompt = null;
       });
+
+      if (isIOS) {
+        if (pwaBanner) {
+          pwaBanner.classList.add('show');
+          btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
+          btnPwaInstall.onclick = function() {
+            alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
+          };
+        }
+      }
+
+      if (btnPwaInstall && !isIOS) {
+        btnPwaInstall.addEventListener('click', async function() {
+          if (!deferredPrompt) {
+            alert("이미 앱이 설치되어 있거나 브라우저 환경상 자동 설치를 지원하지 않습니다.");
+            return;
+          }
+          deferredPrompt.prompt();
+          var choiceResult = await deferredPrompt.userChoice;
+          if (choiceResult.outcome === 'accepted') {
+            pwaBanner.classList.remove('show');
+          }
+          deferredPrompt = null;
+        });
+      }
     }
 
     window.addEventListener('appinstalled', function() {
@@ -540,12 +543,16 @@
     });
 
     window.onload = function() {
-      // 모바일 접속 판별
+      // 1. 모바일 접속 판별
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // 2. 어플(PWA 독립형 모드)로 실행 중인지 확인
+      var isAppMode = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // 모바일 기기일 때만 수동 설치 버튼 표시 (PC 접속 시 표시 안 됨)
-      if (isMobile && manualBtn) {
+      // 3. 모바일 접속이면서 + 어플이 아닌 일반 브라우저로 접근했을 때만 수동 설치 버튼 표시
+      if (isMobile && !isAppMode && manualBtn) {
         manualBtn.style.display = 'flex';
       }
 
