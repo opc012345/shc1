@@ -163,7 +163,7 @@
 
         <div class="flex items-center justify-between pt-1">
           <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900">
+            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" checked>
             <span class="text-xs font-bold text-slate-600">로그인 상태 유지</span>
           </label>
         </div>
@@ -186,7 +186,6 @@
     </div>
 
     <div class="flex items-center gap-1 sm:gap-4 text-xs font-semibold shrink-0 ml-auto">
-      <!-- 💡 모바일에서도 현재 시각이 보이도록 hidden 클래스 제거 -->
       <div id="current-time" class="text-slate-300 font-mono text-xs sm:text-base"></div>
       
       <button id="noti-permission-btn" onclick="enableNotificationsAndSound()" class="bg-amber-600 hover:bg-amber-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
@@ -229,12 +228,13 @@
         <button onclick="toggleManualDetail()" class="w-full p-3.5 px-4 flex items-center justify-between text-left">
           <div class="flex items-center gap-2 text-xs sm:text-sm font-bold text-blue-300">
             <i class="fa-solid fa-mobile-screen text-slate-400"></i>
-            <span>아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+            <span>아이폰 / 카카오톡 접속 시 수동 설치 및 브라우저 전환 방법</span>
           </div>
           <i id="manual-arrow-icon" class="fa-solid fa-chevron-right text-xs text-blue-400 transition-transform"></i>
         </button>
         
         <div id="manual-detail-text" class="hidden px-4 pb-4 pt-1 border-t border-slate-800 text-xs text-slate-300 space-y-1.5 bg-slate-950/40">
+          <p class="text-amber-300 font-bold">• 카카오톡 접속 시 세션 유지를 위해 우측 하단 메뉴(<i class="fa-solid fa-ellipsis"></i>) ➔ [다른 브라우저로 열기]를 권장합니다.</p>
           <p>• <strong>카카오톡:</strong> 우측 하단 메뉴(<i class="fa-solid fa-ellipsis"></i>) 클릭 ➔ <strong class="text-amber-300">[다른 브라우저로 열기]</strong> 후 홈 화면에 추가해 주세요.</p>
           <p>• <strong>아이폰 Safari:</strong> 하단 공유 버튼(<i class="fa-solid fa-share-from-square"></i>) ➔ <strong class="text-amber-300">[홈 화면에 추가]</strong>를 누르시면 전용 앱으로 등록됩니다.</p>
         </div>
@@ -423,10 +423,10 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      const isAuthLocal = localStorage.getItem('shc_manager_auth') === 'true';
-      const isAuthSession = sessionStorage.getItem('shc_manager_auth') === 'true';
+      // 💡 [수정] 카카오톡 인앱 브라우저 등의 세션 증발 및 자동로그인 우회 방지 (명시적 체크)
+      const authCookie = localStorage.getItem('shc_manager_auth');
 
-      if (isAuthLocal || isAuthSession) {
+      if (authCookie === 'true') {
         hideLoginModal();
         initSystem();
       } else {
@@ -445,15 +445,11 @@
     function handleLogin(e) {
       e.preventDefault();
       const passwordInput = document.getElementById('login-password').value;
-      const rememberMe = document.getElementById('remember-me').checked;
       const errorMsg = document.getElementById('login-error-msg');
 
       if (passwordInput === MANAGER_PASSWORD) {
-        if (rememberMe) {
-          localStorage.setItem('shc_manager_auth', 'true');
-        } else {
-          sessionStorage.setItem('shc_manager_auth', 'true');
-        }
+        // 💡 [수정] 카카오톡 환경에서도 확실히 저장되도록 항상 localStorage 이용
+        localStorage.setItem('shc_manager_auth', 'true');
         errorMsg.classList.add('hidden');
         hideLoginModal();
         initSystem();
@@ -477,10 +473,10 @@
       fetchData();
       subscribeRealtime();
       
-      // 💡 모바일 환경 등에서 실시간 누락 방지를 위해 10초마다 자동 백그라운드 동기화 수행
+      // 💡 백그라운드 싱크 강화 (5초마다 자동 동기화로 실시간 누락 완전 방지)
       setInterval(() => {
         fetchData();
-      }, 10000);
+      }, 5000);
     }
 
     function enableNotificationsAndSound() {
@@ -560,8 +556,9 @@
       if (!_supabase) return;
       const statusBadge = document.getElementById('realtime-status');
 
+      // 💡 [수정] 고유 채널 명칭 부여 및 실시간 이벤트 핸들링 최적화
       _supabase
-        .channel('public:dock_control')
+        .channel('custom-all-channel')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'dock_control' },
@@ -572,10 +569,11 @@
               showDesktopNotification(newCar);
               startTitleFlash();
             }
+            // 즉시 데이터 동기화 함수 호출
             await fetchData();
           }
         )
-        .subscribe((status) => {
+        .subscribe((status, err) => {
           if (status === 'SUBSCRIBED') {
             statusBadge.innerText = '실시간 연결됨';
             statusBadge.className = 'bg-emerald-500/20 text-emerald-400 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-emerald-500/30 font-medium whitespace-nowrap shrink-0';
