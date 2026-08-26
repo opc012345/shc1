@@ -510,6 +510,7 @@
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
+    // 모바일 웹(사파리) 접속 중에만 iOS 수동 배너를 표시하고, 앱(standalone) 접속 시에는 안 보이도록 제어합니다.
     if (isIOS && !isStandalone) {
       if (pwaBanner) {
         pwaBanner.classList.add('show');
@@ -540,13 +541,17 @@
     });
 
     window.onload = function() {
-      // 모바일 접속 판별
+      // 모바일 접속 및 어플(standalone) 환경 판별
       var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // 모바일 기기일 때만 수동 설치 버튼 표시 (PC 접속 시 표시 안 됨)
-      if (isMobile && manualBtn) {
+      // 모바일 브라우저 접속 환경이며, '어플(standalone)'로 접속한 상태가 아닐 때만 수동 설치 버튼 표시
+      if (isMobile && !isStandalone && manualBtn) {
+        manualBtn.style.style.display = 'none'; // 안전 초기화
         manualBtn.style.display = 'flex';
+      } else if (manualBtn) {
+        // 어플(standalone)로 실행 중이거나 PC 접속 시 수동 안내 버튼 숨김
+        manualBtn.style.display = 'none';
       }
 
       var savedCar = localStorage.getItem('shc_car');
