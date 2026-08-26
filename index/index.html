@@ -2,802 +2,130 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🚛 [신흥정밀] 차량 입문 등록 안내</title>
-
-  <!-- PWA 지원 설정 -->
-  <meta name="theme-color" content="#c81e2b">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신흥정밀 차량 입문 등록</title>
+  
+  <!-- PWA 기본 메타태그 -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="신흥정밀 차량입문">
+  <meta name="apple-mobile-web-app-title" content="입문등록">
+  
+  <!-- SHC 원형 로고 아이콘 -->
+  <link rel="apple-touch-icon" id="app-icon-apple" href="">
+  <link rel="icon" id="app-icon-fav" href="">
 
-  <!-- 카카오톡 링크 공유(미리보기 카드) 설정 -->
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="🚛 [신흥정밀] 차량 입문 등록 안내">
-  <meta property="og:description" content="※ 고정 기사님도 방문 시마다 매번 입문 등록을 해주세요.">
-  <meta property="og:image" content="https://opc012345.github.io/shc1/index/map.png">
+  <!-- 동적 PWA Manifest 및 상단 알림 방지용 Blob Service Worker 스크립트 -->
+  <script>
+    const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
+    const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
+    const logoUrl = URL.createObjectURL(logoBlob);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('app-icon-apple').href = logoUrl;
+      document.getElementById('app-icon-fav').href = logoUrl;
+    });
+
+    const manifest = {
+      name: "신흥정밀 차량 입문 등록",
+      short_name: "입문등록",
+      start_url: "./index.html?mode=pwa",
+      display: "standalone",
+      background_color: "#ffffff",
+      theme_color: "#dc2626",
+      icons: [{
+        src: logoUrl,
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    // 상단 알림을 유발하는 sw.js 호출 대신 Blob 방식 임시 서비스 워커 적용
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('activate', (e) => self.clients.claim());
+        self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(err => console.log('SW register failed:', err));
+    }
+  </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
-    body { background-color: #f1f5f9; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; padding: 16px; }
-    
-    .container { background: #ffffff; width: 100%; max-width: 460px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); padding: 28px 20px; margin-top: 10px; margin-bottom: 20px; }
-    
-    .header-logo { text-align: center; margin-bottom: 12px; }
-    .shc-logo {
-      display: inline-flex; justify-content: center; align-items: center; background: #c81e2b; color: white;
-      font-weight: 900; font-size: 16px; font-style: italic; width: 56px; height: 56px; border-radius: 50%;
-      letter-spacing: -0.5px; box-shadow: 0 2px 6px rgba(200, 30, 43, 0.3);
-    }
-    .header-title { font-size: 26px; font-weight: 800; color: #0f172a; text-align: center; margin-bottom: 16px; word-break: keep-all; }
-    
-    /* 앱 설치 유도 배너 스타일 */
-    .pwa-install-banner {
-      display: none;
-      background: #fef3c7;
-      border: 1.5px solid #f59e0b;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      text-align: center;
-    }
-    .pwa-install-banner.show {
-      display: block;
-    }
-    .pwa-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #92400e;
-      margin-bottom: 8px;
-    }
-    .btn-pwa-install {
-      width: 100%;
-      background: #f59e0b;
-      color: #0f172a;
-      border: none;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.3);
-      transition: transform 0.1s;
-    }
-    .btn-pwa-install:active {
-      transform: scale(0.98);
-    }
-
-    /* 수동 앱 설치 안내 버튼 */
-    .manual-install-btn {
-      width: 100%;
-      padding: 12px 14px;
-      background-color: #eff6ff;
-      color: #1d4ed8;
-      border: 1.5px solid #bfdbfe;
-      border-radius: 12px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 18px;
-      transition: all 0.2s;
-    }
-    .manual-install-btn:active {
-      background-color: #dbeafe;
-    }
-
-    .header-guide-box { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px 16px; margin-bottom: 18px; text-align: left; }
-    
-    .header-sub-main { font-size: 16px; color: #0f172a; font-weight: 800; margin-bottom: 14px; line-height: 1.6; word-break: keep-all; display: flex; flex-direction: column; gap: 8px; }
-    
-    .main-step { 
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 6px;
-      align-items: start;
-    }
-    .step-num { color: #dc2626; flex-shrink: 0; }
-    
-    .header-sub-list { 
-      font-size: 13.5px; 
-      color: #334155; 
-      line-height: 1.5; 
-      margin-bottom: 14px; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px; 
-      background: #ffffff; 
-      padding: 12px; 
-      border-radius: 8px; 
-      border: 1px solid #edf2f7; 
-    }
-    .list-item { 
-      display: grid; 
-      grid-template-columns: auto 1fr; 
-      gap: 6px; 
-      align-items: start; 
-    }
-    .list-item .label-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-    }
-    .list-item .icon { font-size: 11px; }
-    .list-item .label { font-weight: 700; color: #1e293b; }
-    .list-item .desc { 
-      color: #334155; 
-      font-weight: 500; 
-      word-break: keep-all; 
-    }
-
-    .header-sub-notice { 
-      font-size: 13px; 
-      color: #dc2626; 
-      line-height: 1.5; 
-      font-weight: 700; 
-      border-top: 1px dashed #cbd5e1; 
-      padding-top: 12px; 
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .notice-item { 
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 6px;
-      align-items: start;
-    }
-    .notice-icon {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .notice-text {
-      word-break: keep-all;
-    }
-    .notice-sub {
-      color: #dc2626;
-      font-size: 12.5px;
-      margin-top: 2px;
-      word-break: keep-all;
-    }
-
-    .accordion-toggle {
-      width: 100%; padding: 14px 16px; background-color: #f1f5f9; color: #1e293b; border: 1.5px solid #cbd5e1;
-      border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex;
-      justify-content: space-between; align-items: center; margin-bottom: 18px; transition: all 0.2s;
-    }
-    .accordion-toggle:hover { background-color: #e2e8f0; }
-    .accordion-content { display: none; background: #fafafa; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: -8px; margin-bottom: 20px; }
-    .accordion-content.show { display: block; }
-    .contact-group { margin-bottom: 14px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px; }
-    .contact-group:last-child { margin-bottom: 10px; border-bottom: none; padding-bottom: 0; }
-    .contact-item { font-size: 14px; color: #334155; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .contact-item a { color: #dc2626; text-decoration: none; font-weight: bold; background: #fee2e2; padding: 6px 12px; border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
-    
-    .map-container { position: relative; cursor: pointer; margin-top: 10px; }
-    .map-img { width: 100%; border-radius: 8px; border: 1px solid #e2e8f0; display: block; }
-    .map-zoom-hint {
-      position: absolute; bottom: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); color: #fff;
-      font-size: 12px; padding: 6px 10px; border-radius: 6px; pointer-events: none; backdrop-filter: blur(2px);
-      display: flex; align-items: center; gap: 4px; font-weight: 600;
-    }
-
-    .form-group { margin-bottom: 18px; }
-    .label-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-    .label-title i { color: #dc2626; }
-    .required { color: #dc2626; }
-
-    .input-wrapper { position: relative; display: flex; align-items: center; }
-    input[type="text"], input[type="tel"] {
-      width: 100%; padding: 14px 10px; border: 1.5px solid #cbd5e1; border-radius: 12px; font-size: 15px; font-weight: 600; background: #f8fafc; color: #0f172a; outline: none; transition: all 0.2s; letter-spacing: -0.5px;
-    }
-    input:focus { border-color: #dc2626; background: #ffffff; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15); }
-    .clear-btn { position: absolute; right: 14px; background: #94a3b8; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-
-    .row-2 { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; }
-
-    .remember-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin: 22px 0; }
-    .remember-text { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #1e293b; }
-    .remember-sub { font-size: 12px; color: #64748b; font-weight: normal; margin-top: 2px; }
-
-    .switch { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 26px; }
-    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-    input:checked + .slider { background-color: #dc2626; }
-    input:checked + .slider:before { transform: translateX(22px); }
-
-    .btn-submit { width: 100%; padding: 18px; background-color: #dc2626; color: white; border: none; border-radius: 14px; font-size: 18px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.2s; }
-    .btn-submit:active { transform: scale(0.98); }
-
-    .status-section { margin-top: 26px; border-top: 1.5px dashed #cbd5e1; padding-top: 20px; }
-    .status-header { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #334155; font-weight: 700; margin-bottom: 14px; }
-    
-    .history-list { display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto; }
-    
-    .history-card { 
-      background: #ffffff; 
-      border: 1px solid #e2e8f0; 
-      border-radius: 16px; 
-      padding: 16px; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .card-top { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
-    .card-time { font-family: monospace; font-size: 13px; color: #64748b; font-weight: 600; }
-    
-    .badge-status { padding: 5px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
-    .badge-wait { background-color: #fef3c7; color: #b45309; }
-    .badge-done { background-color: #d1fae5; color: #047857; }
-    .badge-cancel { background-color: #ffe4e6; color: #be123c; }
-
-    .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .info-label { font-size: 11.5px; font-weight: 700; color: #64748b; text-transform: uppercase; }
-    .info-val-car { font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 2px; }
-    .info-val-user { font-size: 15px; font-weight: 700; color: #334155; margin-top: 2px; }
-
-    .card-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #f1f5f9; }
-    .card-phone { font-size: 13px; color: #64748b; font-family: monospace; font-weight: 500; }
-    
-    .btn-cancel { background: #e2e8f0; color: #334155; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-    .btn-cancel:hover { background: #fee2e2; color: #dc2626; }
-    .empty-msg { text-align: center; color: #64748b; font-size: 13px; font-weight: 500; padding: 24px 0; background: #f8fafc; border-radius: 12px; border: 1px dashed #e2e8f0; }
-
-    .modal-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.65); display: none; justify-content: center; align-items: center;
-      z-index: 1000; padding: 20px;
-    }
-    .modal-overlay.show { display: flex; }
-    
-    .modal-box {
-      background: #ffffff; width: 100%; max-width: 360px; border-radius: 18px;
-      padding: 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: fadeIn 0.2s ease-out;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .modal-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 14px; line-height: 1.5; text-align: center; }
-    .modal-input {
-      width: 100%; padding: 14px; border: 1.5px solid #cbd5e1; border-radius: 10px;
-      font-size: 18px; font-weight: bold; text-align: center; outline: none; margin-bottom: 18px;
-    }
-    .modal-input:focus { border-color: #dc2626; }
-    .modal-btns { display: flex; gap: 10px; }
-    .modal-btn {
-      flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px;
-      font-weight: 700; cursor: pointer; transition: all 0.2s;
-    }
-    .modal-btn-confirm { background: #0f172a; color: white; }
-    .modal-btn-cancel { background: #f1f5f9; color: #64748b; }
-
-    .image-modal-content {
-      position: relative;
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      max-height: 95vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .image-modal-content img {
-      width: 100%;
-      height: auto;
-      max-width: 100%;
-      max-height: 88vh;
-      object-fit: contain;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    .image-modal-close {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      color: #ffffff;
-      font-size: 20px;
-      cursor: pointer;
-      background: rgba(15, 23, 42, 0.75);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-      backdrop-filter: blur(4px);
-    }
-  </style>
 </head>
-<body>
+<body class="bg-slate-100 min-h-screen flex flex-col justify-center items-center p-4">
 
-  <div class="container">
-    
-    <div class="header-logo">
-      <span class="shc-logo">SHC</span>
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md text-center border border-slate-200">
+    <div class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xl tracking-tighter italic shadow-lg mx-auto mb-4">
+      SHC
     </div>
-    <h1 class="header-title">신흥정밀 차량 입문 등록 안내</h1>
-    
-    <!-- 1. 원터치 앱 설치 스마트 팁 배너 -->
-    <div class="pwa-install-banner" id="pwaBanner">
-      <div class="pwa-title">💡 자주 오시는 기사님을 위한 스마트 팁!</div>
-      <button type="button" class="btn-pwa-install" id="btnPwaInstall">
-        <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
-      </button>
-    </div>
+    <h1 class="text-2xl font-black text-slate-800 mb-2">신흥정밀 차량 입문 등록</h1>
+    <p class="text-sm text-slate-500 mb-6">방문하신 차량 정보를 입력해 주세요.</p>
 
-    <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 (기본 숨김 처리) -->
-    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert(' 수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n   • 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n   • [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰 (사파리):\n   • 하단 중앙 공유 버튼(↑) ➔ [홈 화면에 추가]\n\n3. 안드로이드 (크롬):\n   • 우측 상단 점 3개(⋮) ➔ [앱 설치] 선택')">
-      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i>  아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
-      <i class="fa-solid fa-chevron-right"></i>
-    </button>
-
-    <div class="header-guide-box">
-      <div class="header-sub-main">
-        <div class="main-step"><span class="step-num">1.</span> <span>보안실 접수 없이 바로 통과해 주세요.</span></div>
-        <div class="main-step"><span class="step-num">2.</span> <span>지정된 장소에 주차 후 반드시 입문 등록을 해주세요.</span></div>
-      </div>
-      
-      <div class="header-sub-list">
-        <div class="list-item">
-          <div class="label-group">
-            <span class="icon">🔹</span>
-            <span class="label">처음 방문:</span>
-          </div>
-          <div class="desc">대기장소 주차 후 입문 등록</div>
-        </div>
-        <div class="list-item">
-          <div class="label-group">
-            <span class="icon">🔹</span>
-            <span class="label">고정 방문:</span>
-          </div>
-          <div class="desc">상하차장(또는 대기장소) 주차 후 입문 등록</div>
-        </div>
+    <!-- 입문 등록 폼 -->
+    <form id="entry-form" onsubmit="handleFormSubmit(event)" class="space-y-4 text-left">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">차량 번호</label>
+        <input type="text" id="car_number" required placeholder="예: 12가 3456" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-800 font-bold">
       </div>
 
-      <div class="header-sub-notice">
-        <div class="notice-item">
-          <span class="notice-icon">🚨</span>
-          <div class="notice-text">모든 기사님은 방문 시마다 입문 등록 필수</div>
-        </div>
-        <div class="notice-item">
-          <span class="notice-icon">🚨</span>
-          <div class="notice-text">입문 등록이 완료되어야 담당자 확인 후 상하차가 진행됩니다.</div>
-        </div>
-        <div class="notice-item">
-          <span class="notice-icon">※</span>
-          <div class="notice-text">
-            입문 등록 후 대기해 주시고,
-            <div class="notice-sub">5분 이상 안내가 없을 경우 담당자에게 연락해 주세요.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <button type="button" class="accordion-toggle" onclick="toggleAccordion()">
-      <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i>  약도 및 담당자 연락처 보기</span>
-      <i class="fa-solid fa-chevron-down" id="accordionIcon"></i>
-    </button>
-    
-    <div class="accordion-content" id="accordionContent">
-      <div class="contact-group">
-        <div class="contact-item">
-          <span><strong>오성수 과장</strong> (010-7178-4568)</span>
-          <a href="tel:01071784568"><i class="fa-solid fa-phone"></i> 전화걸기</a>
-        </div>
-        <div class="contact-item">
-          <span><strong>김승준 대리</strong> (010-4844-1817)</span>
-          <a href="tel:01048441817"><i class="fa-solid fa-phone"></i> 전화걸기</a>
-        </div>
-      </div>
-      
-      <div class="map-container" onclick="openMapModal()">
-        <img src="./map.png" alt="신흥정밀 약도" class="map-img">
-        <div class="map-zoom-hint"><i class="fa-solid fa-magnifying-glass-plus"></i> 터치하여 크게 보기</div>
-      </div>
-    </div>
-
-    <form id="dockForm">
-      <div class="form-group">
-        <label class="label-title"><i class="fa-solid fa-truck"></i> 차량번호 <span class="required">*</span></label>
-        <div class="input-wrapper">
-          <input type="text" id="carNumber" placeholder="예: 대전11가1234" required oninput="formatCarInput(this); loadMyStatus();">
-          <button type="button" class="clear-btn" onclick="clearInput('carNumber')"><i class="fa-solid fa-xmark"></i></button>
-        </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">운전자 성함</label>
+        <input type="text" id="driver_name" required placeholder="성함을 입력하세요" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-800 font-bold">
       </div>
 
-      <div class="row-2">
-        <div class="form-group">
-          <label class="label-title"><i class="fa-solid fa-user"></i> 운전자 성함 <span class="required">*</span></label>
-          <input type="text" id="driverName" placeholder="홍길동" required oninput="formatNameInput(this)">
-        </div>
-
-        <div class="form-group">
-          <label class="label-title"><i class="fa-solid fa-phone"></i> 연락처 <span class="required">*</span></label>
-          <input type="tel" id="phoneNumber" placeholder="010-0000-0000" maxlength="13" required oninput="formatPhoneInput(this); loadMyStatus();">
-        </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">연락처</label>
+        <input type="tel" id="phone_number" required placeholder="010-0000-0000" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none text-slate-800 font-bold">
       </div>
 
-      <div class="remember-box">
-        <div>
-          <div class="remember-text"><i class="fa-solid fa-bookmark" style="color: #f59e0b;"></i> 내 정보 기억하기</div>
-          <div class="remember-sub">다음 방문 시 정보가 자동 입력됩니다.</div>
-        </div>
-        <label class="switch">
-          <input type="checkbox" id="rememberInfo" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <button type="submit" class="btn-submit" id="btnSubmit">
-        <i class="fa-solid fa-paper-plane"></i> 차량 입문 등록
+      <button type="submit" id="submit-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl shadow-lg transition-all text-lg mt-2">
+        입문 등록 신청
       </button>
     </form>
-
-    <div class="status-section">
-      <div class="status-header">
-        <span>[오늘 입문 등록 내역]</span>
-        <span id="lastCheckTime" style="font-weight: normal; font-size: 12px; color: #64748b;">최종 확인: --:--</span>
-      </div>
-
-      <div class="history-list" id="historyList">
-        <div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="modal-overlay" id="cancelModal">
-    <div class="modal-box">
-      <div class="modal-title">알림을 취소하려면 등록하셨던<br>[연락처 뒤 4자리]를 입력해 주세요.</div>
-      <input type="input" pattern="[0-9]*" inputmode="numeric" maxlength="4" class="modal-input" id="cancelInput" placeholder="숫자 4자리 입력">
-      <div class="modal-btns">
-        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCancelModal()">취소</button>
-        <button type="button" class="modal-btn modal-btn-confirm" onclick="submitCancel()">확인</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="mapModal" onclick="closeMapModal()">
-    <div class="image-modal-content" onclick="event.stopPropagation();">
-      <button class="image-modal-close" onclick="closeMapModal()"><i class="fa-solid fa-xmark"></i></button>
-      <img src="./map.png" alt="신흥정밀 약도 크게보기" onclick="closeMapModal()">
-    </div>
   </div>
 
   <script>
-    var SUPABASE_URL = "https://hlhjmnsgqhysvilltfpf.supabase.co";
-    var SUPABASE_KEY = "sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i";
-    var _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var currentCancelTargetId = null;
-    var currentCancelTargetPhone = null;
-
-    /* PWA 앱 설치 지원 제어 */
-    var deferredPrompt = null;
-    var pwaBanner = document.getElementById('pwaBanner');
-    var btnPwaInstall = document.getElementById('btnPwaInstall');
-
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-    // 앱(standalone) 상태가 아닐 때만 설치 배너 이벤트를 등록
-    if (!isStandalone) {
-      window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (pwaBanner) {
-          pwaBanner.classList.add('show');
-        }
-      });
-
-      if (isIOS) {
-        if (pwaBanner) {
-          pwaBanner.classList.add('show');
-          btnPwaInstall.innerHTML = '<i class="fa-solid fa-arrow-up-from-bracket"></i> [홈 화면에 추가] 방법 보기';
-          btnPwaInstall.onclick = function() {
-            alert("아이폰(Safari) 설치 방법:\n1. 화면 하단 중앙 [공유] 버튼 클릭\n2. [홈 화면에 추가] 선택");
-          };
-        }
-      }
-
-      if (btnPwaInstall && !isIOS) {
-        btnPwaInstall.addEventListener('click', async function() {
-          if (!deferredPrompt) {
-            alert("이미 앱이 설치되어 있거나 브라우저 환경상 자동 설치를 지원하지 않습니다.");
-            return;
-          }
-          deferredPrompt.prompt();
-          var choiceResult = await deferredPrompt.userChoice;
-          if (choiceResult.outcome === 'accepted') {
-            pwaBanner.classList.remove('show');
-          }
-          deferredPrompt = null;
-        });
-      }
-    }
-
-    window.addEventListener('appinstalled', function() {
-      if (pwaBanner) pwaBanner.classList.remove('show');
-    });
-
-    window.onload = function() {
-      // 1. 모바일 접속 판별
-      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      // 2. 어플(PWA 독립형 모드)로 실행 중인지 확인
-      var isAppMode = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-
-      var manualBtn = document.getElementById('manualInstallBtn');
-      
-      // 3. 모바일 접속이면서 + 어플이 아닌 일반 브라우저로 접근했을 때만 수동 설치 버튼 표시
-      if (isMobile && !isAppMode && manualBtn) {
-        manualBtn.style.display = 'flex';
-      }
-
-      var savedCar = localStorage.getItem('shc_car');
-      var savedName = localStorage.getItem('shc_name');
-      var savedPhone = localStorage.getItem('shc_phone');
-
-      if (savedCar) document.getElementById('carNumber').value = savedCar;
-      if (savedName) document.getElementById('driverName').value = savedName;
-      if (savedPhone) document.getElementById('phoneNumber').value = savedPhone;
-
-      loadMyStatus();
-    };
-
-    function formatCarInput(input) {
-      input.value = input.value.replace(/\s+/g, '');
-    }
-
-    function formatNameInput(input) {
-      input.value = input.value.replace(/\s+/g, '');
-    }
-
-    function formatPhoneInput(input) {
-      var val = input.value.replace(/[^0-9]/g, '');
-      if (val.length < 4) {
-        input.value = val;
-      } else if (val.length < 7) {
-        input.value = val.substr(0, 3) + '-' + val.substr(3);
-      } else if (val.length < 11) {
-        input.value = val.substr(0, 3) + '-' + val.substr(3, 3) + '-' + val.substr(6);
-      } else {
-        input.value = val.substr(0, 3) + '-' + val.substr(3, 4) + '-' + val.substr(7, 4);
-      }
-    }
-
-    function toggleAccordion() {
-      var content = document.getElementById('accordionContent');
-      var icon = document.getElementById('accordionIcon');
-      content.classList.toggle('show');
-      icon.className = content.classList.contains('show') ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
-    }
-
-    function openMapModal() {
-      document.getElementById('mapModal').classList.add('show');
-    }
-    function closeMapModal() {
-      document.getElementById('mapModal').classList.remove('show');
-    }
-
-    function clearInput(id) {
-      document.getElementById(id).value = '';
-      loadMyStatus();
-    }
-
-    document.getElementById('dockForm').addEventListener('submit', async function(e) {
+    async function handleFormSubmit(e) {
       e.preventDefault();
-
-      var carNumber = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
-      var driverName = document.getElementById('driverName').value.replace(/\s+/g, '').trim();
-      var phoneNumber = document.getElementById('phoneNumber').value.trim();
-      var remember = document.getElementById('rememberInfo').checked;
-
-      if (remember) {
-        localStorage.setItem('shc_car', carNumber);
-        localStorage.setItem('shc_name', driverName);
-        localStorage.setItem('shc_phone', phoneNumber);
-      } else {
-        localStorage.removeItem('shc_car');
-        localStorage.removeItem('shc_name');
-        localStorage.removeItem('shc_phone');
-      }
-
-      var btn = document.getElementById('btnSubmit');
+      const btn = document.getElementById('submit-btn');
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 전송 중...';
+      btn.innerText = '등록 중...';
 
-      var res = await _supabase
+      const car_number = document.getElementById('car_number').value.trim();
+      const driver_name = document.getElementById('driver_name').value.trim();
+      const phone_number = document.getElementById('phone_number').value.trim();
+
+      const { error } = await _supabase
         .from('dock_control')
-        .insert([{ 
-          car_number: carNumber, 
-          driver_name: driverName, 
-          phone_number: phoneNumber, 
-          status: '대기중'
-        }]);
+        .insert([{ car_number, driver_name, phone_number, status: '대기중' }]);
 
-      if (res.error) {
+      if (error) {
+        alert('등록 실패: ' + error.message);
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 입문 등록';
-        alert('입문 등록 전송 중 오류가 발생했습니다: ' + res.error.message);
-        return;
-      }
-
-      var botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
-      var chatId = "-5175407977";
-      
-      var message = "🚨 [신규 차량 입문]\n\n" +
-                    "🚛 차량번호: " + carNumber + "\n" +
-                    "👤 운전기사: " + driverName + "\n" +
-                    "📞 연락처: " + phoneNumber;
-
-      try {
-        await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-          })
-        });
-      } catch (tgError) {
-        console.error("텔레그램 전송 실패:", tgError);
-      }
-
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> 차량 입문 등록';
-      alert('차량 입문 등록이 정상적으로 전송되었습니다.');
-      loadMyStatus();
-    });
-
-    async function loadMyStatus() {
-      var container = document.getElementById('historyList');
-      var now = new Date();
-      document.getElementById('lastCheckTime').innerText = "최종 확인: " + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      var inputCar = document.getElementById('carNumber').value.replace(/\s+/g, '').trim();
-      var inputPhone = document.getElementById('phoneNumber').value.trim();
-
-      if (!inputCar || !inputPhone) {
-        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
-        return;
-      }
-
-      var todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
-      var res = await _supabase
-        .from('dock_control')
-        .select('*')
-        .gte('created_at', todayStart.toISOString())
-        .eq('car_number', inputCar)
-        .eq('phone_number', inputPhone)
-        .order('created_at', { ascending: false });
-
-      if (res.error || !res.data || res.data.length === 0) {
-        container.innerHTML = '<div class="empty-msg">오늘 접수된 내 알림 내역이 없습니다.</div>';
-        return;
-      }
-
-      container.innerHTML = '';
-
-      res.data.forEach(function(item) {
-        var dt = new Date(item.created_at);
-        var timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        var status = item.status || '대기중';
-        var badgeClass = 'badge-wait';
-        if (status === '출차완료') badgeClass = 'badge-done';
-        if (status === '입문취소') badgeClass = 'badge-cancel';
-
-        var maskedName = maskName(item.driver_name);
-        var maskedPhone = maskPhone(item.phone_number);
-
-        var actionBtnHtml = '<span style="color:#94a3b8; font-size:12px; font-weight:600;">처리완료</span>';
-        if (status === '대기중') {
-          actionBtnHtml = '<button class="btn-cancel" onclick="openCancelModal(' + item.id + ', \'' + item.phone_number + '\')">취소</button>';
-        }
-
-        var card = document.createElement('div');
-        card.className = 'history-card';
-        card.innerHTML = 
-          '<div class="card-top">' +
-            '<span class="card-time"><i class="fa-regular fa-clock" style="margin-right: 4px;"></i>' + timeStr + '</span>' +
-            '<span class="badge-status ' + badgeClass + '">' + status + '</span>' +
-          '</div>' +
-          '<div class="card-body">' +
-            '<div>' +
-              '<div class="info-label">차량번호</div>' +
-              '<div class="info-val-car">' + (item.car_number || '-') + '</div>' +
-            '</div>' +
-            '<div>' +
-              '<div class="info-label">운전자 성함</div>' +
-              '<div class="info-val-user">' + maskedName + '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="card-bottom">' +
-            '<div class="card-phone"><i class="fa-solid fa-phone" style="color: #94a3b8; margin-right: 4px;"></i>' + maskedPhone + '</div>' +
-            '<div>' + actionBtnHtml + '</div>' +
-          '</div>';
-        container.appendChild(card);
-      });
-    }
-
-    function maskName(name) {
-      if (!name) return '-';
-      if (name.length <= 2) return name.substring(0, 1) + '*';
-      return name.substring(0, 1) + '*'.repeat(name.length - 2) + name.substring(name.length - 1);
-    }
-
-    function maskPhone(phone) {
-      if (!phone) return '-';
-      var clean = phone.replace(/[^0-9]/g, '');
-      if (clean.length === 11) {
-        return clean.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-****');
-      } else if (clean.length === 10) {
-        return clean.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-****');
-      }
-      return phone.substring(0, 7) + '-****';
-    }
-
-    function openCancelModal(id, phone) {
-      currentCancelTargetId = id;
-      currentCancelTargetPhone = phone;
-      document.getElementById('cancelInput').value = '';
-      document.getElementById('cancelModal').classList.add('show');
-      document.getElementById('cancelInput').focus();
-    }
-
-    function closeCancelModal() {
-      document.getElementById('cancelModal').classList.remove('show');
-      currentCancelTargetId = null;
-      currentCancelTargetPhone = null;
-    }
-
-    async function submitCancel() {
-      var inputVal = document.getElementById('cancelInput').value.trim();
-      if (!inputVal) {
-        alert('연락처 뒤 4자리를 입력해주세요.');
-        return;
-      }
-
-      var cleanOriginal = currentCancelTargetPhone.replace(/[^0-9]/g, '');
-      var backendLast4 = cleanOriginal.slice(-4);
-
-      if (inputVal !== backendLast4) {
-        alert('연락처 뒤 4자리가 일치하지 않습니다.');
-        return;
-      }
-
-      var targetId = currentCancelTargetId;
-      closeCancelModal();
-
-      var res = await _supabase
-        .from('dock_control')
-        .update({ status: '입문취소' })
-        .eq('id', targetId);
-
-      if (res.error) {
-        alert('취소 실패: ' + res.error.message);
+        btn.innerText = '입문 등록 신청';
       } else {
-        alert('알림이 취소되었습니다.');
-        loadMyStatus();
+        alert('입문 등록이 완료되었습니다.');
+        document.getElementById('entry-form').reset();
+        btn.disabled = false;
+        btn.innerText = '입문 등록 신청';
       }
     }
-
-    setInterval(function() { loadMyStatus(); }, 10000);
   </script>
 </body>
 </html>
