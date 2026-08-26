@@ -76,7 +76,6 @@
 
     /* 수동 앱 설치 안내 버튼 */
     .manual-install-btn {
-      display: none;
       width: 100%;
       padding: 12px 14px;
       background-color: #eff6ff;
@@ -86,6 +85,7 @@
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
+      display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 18px;
@@ -330,7 +330,7 @@
     </div>
     <h1 class="header-title">신흥정밀 차량 입문 등록 안내</h1>
     
-    <!-- 1. 원터치 앱 설치 스마트 팁 배너 (기본 숨김) -->
+    <!-- 1. 원터치 앱 설치 스마트 팁 배너 -->
     <div class="pwa-install-banner" id="pwaBanner">
       <div class="pwa-title">💡 자주 오시는 기사님을 위한 스마트 팁!</div>
       <button type="button" class="btn-pwa-install" id="btnPwaInstall">
@@ -338,9 +338,12 @@
       </button>
     </div>
 
-    <!-- 2. 수동 설치 안내 버튼 (기본 숨김, 모바일 브라우저에서만 활성화) -->
-    <button type="button" class="manual-install-btn" id="manualInstallBtn" onclick="alert('수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n• 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n• [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰(Safari):\n• 하단 중앙 공유 버튼(↑) 클릭\n• [홈 화면에 추가] 선택')">
-      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+    <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 (기본 숨김 처리) -->
+    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert('수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n• 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n• [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰(Safari):\n• 하단 중앙 공유 버튼(↑) 클릭\n• [홈 화면에 추가] 선택')">
+  <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+  <i class="fa-solid fa-chevron-right"></i>
+</button>  
+      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i>  아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
       <i class="fa-solid fa-chevron-right"></i>
     </button>
 
@@ -387,7 +390,7 @@
     </div>
 
     <button type="button" class="accordion-toggle" onclick="toggleAccordion()">
-      <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i> 약도 및 담당자 연락처 보기</span>
+      <span><i class="fa-solid fa-map-location-dot" style="color:#dc2626; margin-right: 6px;"></i>  약도 및 담당자 연락처 보기</span>
       <i class="fa-solid fa-chevron-down" id="accordionIcon"></i>
     </button>
     
@@ -490,12 +493,11 @@
     var pwaBanner = document.getElementById('pwaBanner');
     var btnPwaInstall = document.getElementById('btnPwaInstall');
 
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     var isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
-    // 모바일 환경이면서 + 앱 모드가 아닌 경우에만 모바일 안내 기능 동작
-    if (isMobile && !isStandalone) {
+    // 앱(standalone) 상태가 아닐 때만 설치 배너 이벤트를 등록
+    if (!isStandalone) {
       window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
@@ -535,13 +537,17 @@
     });
 
     window.onload = function() {
+      // 1. 모바일 접속 판별
+      var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // 2. 어플(PWA 독립형 모드)로 실행 중인지 확인
+      var isAppMode = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
       var manualBtn = document.getElementById('manualInstallBtn');
       
-      // PC 접속 시에는 수동 설치 버튼이 절대로 보이지 않도록 함 (오직 모바일 일반 웹 접속 시에만 표시)
-      if (isMobile && !isStandalone && manualBtn) {
+      // 3. 모바일 접속이면서 + 어플이 아닌 일반 브라우저로 접근했을 때만 수동 설치 버튼 표시
+      if (isMobile && !isAppMode && manualBtn) {
         manualBtn.style.display = 'flex';
-      } else if (manualBtn) {
-        manualBtn.style.display = 'none';
       }
 
       var savedCar = localStorage.getItem('shc_car');
