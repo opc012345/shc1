@@ -1,9 +1,9 @@
 {
   "name": "신흥정밀 차량 현황판",
   "short_name": "차량현황판",
-  "id": "board-app-v1",
+  "id": "shc-board-app-v2",
   "start_url": "./board.html",
-  "scope": "./board.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
