@@ -402,7 +402,7 @@
             if (payload.eventType === 'INSERT') {
               const newCar = payload.new;
               const formattedCarNum = formatNumberToDigits(newCar.car_number);
-              speakTTS(`신규 등록. ${formattedCarNum} 차량이 입문 하였습니다.`);
+              speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
             } else if (payload.eventType === 'UPDATE') {
               const updated = payload.new;
               if (updated.status === '출문완료') {
