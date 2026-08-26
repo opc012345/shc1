@@ -345,6 +345,12 @@
       }
     }
 
+    // 숫자를 '천백십일' 대신 '일 일 일 일' 형태로 띄어 읽도록 변환해 주는 함수
+    function formatNumberToDigits(str) {
+      if (!str) return '';
+      return String(str).replace(/\d/g, (digit) => `${digit} `);
+    }
+
     function speakTTS(text) {
       if ('speechSynthesis' in window && isAudioEnabled) {
         window.speechSynthesis.cancel();
@@ -395,11 +401,13 @@
           (payload) => {
             if (payload.eventType === 'INSERT') {
               const newCar = payload.new;
-              speakTTS(`신규 차량 입장. ${newCar.car_number || ''} 차량이 대기열에 등록되었습니다.`);
+              const formattedCarNum = formatNumberToDigits(newCar.car_number);
+              speakTTS(`신규 차량 입장. ${formattedCarNum} 차량이 대기열에 등록되었습니다.`);
             } else if (payload.eventType === 'UPDATE') {
               const updated = payload.new;
               if (updated.status === '출문완료') {
-                speakTTS(`${updated.car_number || ''} 차량, 출문 처리되었습니다.`);
+                const formattedCarNum = formatNumberToDigits(updated.car_number);
+                speakTTS(`${formattedCarNum} 차량, 출문 처리되었습니다.`);
               }
             }
             fetchBoardData();
