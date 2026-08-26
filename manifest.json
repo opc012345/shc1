@@ -1,9 +1,9 @@
 {
   "name": "신흥정밀 차량 입문 등록",
   "short_name": "입문등록",
-  "id": "shc-driver-app-v2",
-  "start_url": "./index.html",
-  "scope": "./",
+  "id": "/driver/",
+  "start_url": "/driver/index.html",
+  "scope": "/driver/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#dc2626",
