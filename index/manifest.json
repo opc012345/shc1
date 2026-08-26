@@ -1,8 +1,8 @@
 {
   "name": "신흥정밀 차량 입문 등록",
   "short_name": "입문등록",
-  "id": "./",
-  "start_url": "./index.html",
+  "id": "/index.html",
+  "start_url": "./index.html?mode=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -11,7 +11,8 @@
     {
       "src": "./icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
