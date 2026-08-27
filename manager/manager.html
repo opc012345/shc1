@@ -151,7 +151,7 @@
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
       <div class="text-center space-y-2">
         <div class="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded mb-1">SHC</div>
-        <h2 class="text-xl font-bold text-slate-900">담당자 관제 시스템 접속</h2>
+        <h2 class="text-xl font-bold text-slate-900">차량 입출문 시스템 (담당자)</h2>
         <p class="text-xs text-slate-500">접속 비밀번호를 입력해 주세요.</p>
       </div>
 
@@ -180,7 +180,6 @@
   <!-- 상단 네비게이션 바 -->
   <nav class="bg-slate-900 text-white px-2.5 sm:px-6 py-2.5 flex flex-wrap justify-between items-center shadow-lg gap-1.5 sm:gap-2">
     <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-      <!-- 상단 로고 이미지 아이콘으로 대체 반영 -->
       <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-600 flex items-center justify-center font-black italic text-[11px] sm:text-xs shrink-0 shadow">SHC</div>
       <h1 class="text-sm sm:text-2xl font-black tracking-tight whitespace-nowrap truncate">차량 입출문 시스템</h1>
       <span id="realtime-status" class="bg-amber-500/20 text-amber-400 text-[9px] sm:text-xs px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full border border-amber-500/30 font-medium whitespace-nowrap shrink-0">연결 중...</span>
@@ -189,7 +188,6 @@
     <div class="flex items-center gap-1 sm:gap-4 text-xs font-semibold shrink-0 ml-auto">
       <div id="current-time" class="text-slate-300 font-mono text-xs sm:text-base"></div>
       
-      <!-- 3. 알림 권한 버튼 (ON/OFF 상태 표시 적용) -->
       <button id="noti-permission-btn" onclick="toggleNotification()" class="bg-amber-600 hover:bg-amber-500 text-white p-1.5 sm:px-3 sm:py-2 rounded-xl transition flex items-center gap-1">
         <i class="fa-solid fa-bell-slash text-xs"></i>
         <span id="noti-status-text" class="hidden md:inline">알림 Off</span>
@@ -425,7 +423,14 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      const authCookie = localStorage.getItem('shc_manager_auth');
+      // 카카오톡 등 브라우저 환경에서 저장된 인증 정보 유지 검증 로직 보완
+      let authCookie = localStorage.getItem('shc_manager_auth');
+      if (!authCookie) {
+        // localStorage가 차단되거나 초기화된 경우 대비 로컬스토리지 백업 대체 체크
+        try {
+          authCookie = sessionStorage.getItem('shc_manager_auth');
+        } catch(err) {}
+      }
 
       if (authCookie === 'true') {
         hideLoginModal();
@@ -446,10 +451,15 @@
     function handleLogin(e) {
       e.preventDefault();
       const passwordInput = document.getElementById('login-password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
       const errorMsg = document.getElementById('login-error-msg');
 
       if (passwordInput === MANAGER_PASSWORD) {
-        localStorage.setItem('shc_manager_auth', 'true');
+        if (rememberMe) {
+          localStorage.setItem('shc_manager_auth', 'true');
+        } else {
+          sessionStorage.setItem('shc_manager_auth', 'true');
+        }
         errorMsg.classList.add('hidden');
         hideLoginModal();
         initSystem();
@@ -478,7 +488,6 @@
       }, 5000);
     }
 
-    // 3. 알림 권한 및 ON/OFF 토글 처리 함수 수정
     function toggleNotification() {
       if (!("Notification" in window)) {
         alert("이 브라우저는 알림을 지원하지 않습니다.");
