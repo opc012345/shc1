@@ -1,6 +1,6 @@
 {
   "name": "SHC 차량 입출문 관제",
-  "short_name": "SHC 관제",
+  "short_name": "차량관리 담당자용",
   "id": "./",
   "start_url": "./manager.html",
   "scope": "./",
