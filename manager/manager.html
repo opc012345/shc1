@@ -717,6 +717,9 @@
     }
 
     function renderData() {
+      // 1. 렌더링 직전에 현재 체크되어 있던 항목들의 ID들을 미리 기억해 둠
+      const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+
       const tbody = document.getElementById('table-body');
       const query = document.getElementById('search-input').value.toLowerCase();
 
@@ -769,6 +772,16 @@
           </tr>
         `;
       }).join('');
+
+      // 2. 렌더링 직후, 아까 기억해 둔 ID들에 해당하는 체크박스들을 다시 체크 상태로 복원
+      if (checkedIds.length > 0) {
+        const checkboxes = document.querySelectorAll('.row-checkbox');
+        checkboxes.forEach(cb => {
+          if (checkedIds.includes(cb.value)) {
+            cb.checked = true;
+          }
+        });
+      }
     }
 
     function toggleSelectAll(master) {
