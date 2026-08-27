@@ -1,6 +1,6 @@
 {
   "name": "신흥정밀 차량 입문 등록",
-  "short_name": "입문등록",
+  "short_name": "신흥정밀 입문등록",
   "id": "/index.html",
   "start_url": "./index.html?mode=pwa",
   "scope": "./",
