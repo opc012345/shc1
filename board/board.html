@@ -293,6 +293,24 @@
 
       fetchBoardData();
       subscribeRealtime();
+
+      // 🔄 화면이 다시 보이거나 네트워크가 복구될 때 실시간 데이터 강제 동기화
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          console.log('앱이 활성화되어 최신 데이터를 동기화합니다.');
+          fetchBoardData();
+        }
+      });
+
+      window.addEventListener('online', () => {
+        console.log('네트워크 연결이 복구되었습니다.');
+        fetchBoardData();
+      });
+
+      // 5초마다 데이터 동기화 안전장치 추가
+      setInterval(() => {
+        fetchBoardData();
+      }, 5000);
     };
 
     function maskName(name) {
