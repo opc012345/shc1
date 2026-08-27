@@ -150,7 +150,8 @@
   <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
       <div class="text-center space-y-2">
-        <div class="inline-block bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded mb-1">SHC</div>
+        <!-- 원형 로고 스타일 적용 -->
+        <div class="inline-flex w-10 h-10 rounded-full bg-red-600 items-center justify-center font-black italic text-white text-xs mb-1 shadow">SHC</div>
         <h2 class="text-xl font-bold text-slate-900">차량 입출문 시스템 (담당자)</h2>
         <p class="text-xs text-slate-500">접속 비밀번호를 입력해 주세요.</p>
       </div>
@@ -423,10 +424,8 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      // 카카오톡 등 브라우저 환경에서 저장된 인증 정보 유지 검증 로직 보완
       let authCookie = localStorage.getItem('shc_manager_auth');
       if (!authCookie) {
-        // localStorage가 차단되거나 초기화된 경우 대비 로컬스토리지 백업 대체 체크
         try {
           authCookie = sessionStorage.getItem('shc_manager_auth');
         } catch(err) {}
