@@ -387,7 +387,13 @@
     async function fetchBoardData() {
       if (!_supabase) return;
 
-      const today = new Date().toISOString().split('T')[0];
+      // 💡 브라우저 로컬 시간 기준 오늘 날짜를 안전하게 추출 (UTC로 인한 전날 조회 문제 해결)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const today = `${year}-${month}-${day}`;
+
       const start = `${today}T00:00:00`;
       const end = `${today}T23:59:59`;
 
