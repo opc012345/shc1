@@ -420,7 +420,13 @@
 
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      document.getElementById('date-filter').valueAsDate = new Date();
+      // 수정: KST(한국 시간) 기준 오늘 날짜를 정확히 계산하여 날짜 필터에 세팅
+      const nowKst = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+      const year = nowKst.getFullYear();
+      const month = String(nowKst.getMonth() + 1).padStart(2, '0');
+      const day = String(nowKst.getDate()).padStart(2, '0');
+      document.getElementById('date-filter').value = `${year}-${month}-${day}`;
+
       updateClock();
       setInterval(updateClock, 1000);
 
@@ -717,7 +723,6 @@
     }
 
     function renderData() {
-      // 📱 PC 및 모바일 화면 모두 체크 상태 유지하도록 수정된 수집 로직
       const checkedIds = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
 
       const tbody = document.getElementById('table-body');
@@ -773,7 +778,6 @@
         `;
       }).join('');
 
-      // 📱 렌더링 완료 후 모바일과 PC 모두 체크 상태 복원 적용
       if (checkedIds.length > 0) {
         const checkboxes = document.querySelectorAll('.row-checkbox');
         checkboxes.forEach(cb => {
