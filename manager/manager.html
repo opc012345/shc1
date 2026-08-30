@@ -359,6 +359,10 @@
     let notificationQueue = [];
     let deferredPrompt = null;
 
+    // [개선 3, 4] 누적 방지를 위한 타이머 및 채널 관리 변수 추가
+    let pollingInterval = null;
+    let currentChannel = null;
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
@@ -420,7 +424,7 @@
 
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // 수정: KST(한국 시간) 기준 오늘 날짜를 정확히 계산하여 날짜 필터에 세팅
+      // KST(한국 시간) 기준 오늘 날짜 계산
       const nowKst = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
       const year = nowKst.getFullYear();
       const month = String(nowKst.getMonth() + 1).padStart(2, '0');
@@ -474,8 +478,21 @@
       }
     }
 
+    // [개선 3, 4] 로그아웃 시 기존 타이머 및 실시간 채널 깔끔하게 정리
+    function cleanupSystem() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+      if (_supabase && currentChannel) {
+        _supabase.removeChannel(currentChannel);
+        currentChannel = null;
+      }
+    }
+
     function handleLogout() {
       if (confirm('로그아웃 하시겠습니까?')) {
+        cleanupSystem();
         localStorage.removeItem('shc_manager_auth');
         sessionStorage.removeItem('shc_manager_auth');
         document.getElementById('login-password').value = '';
@@ -484,13 +501,15 @@
     }
 
     function initSystem() {
+      cleanupSystem(); // 중복 방지를 위해 기존 세션 정리 후 시작
       checkNotificationStatus();
       fetchData();
       subscribeRealtime();
       
-      setInterval(() => {
+      // [개선 3] 실시간 구독이 주 역할을 하므로, 폴링 주기를 30초(연결 백업용)로 조정하여 부하 감소
+      pollingInterval = setInterval(() => {
         fetchData();
-      }, 5000);
+      }, 30000);
     }
 
     function toggleNotification() {
@@ -553,8 +572,10 @@
     async function fetchData() {
       if (!_supabase) return;
       const selectedDate = document.getElementById('date-filter').value;
-      const start = `${selectedDate}T00:00:00`;
-      const end = `${selectedDate}T23:59:59`;
+      
+      // [개선 1] 브라우저 로컬 시간대 대신 KST(+09:00) 오프셋을 명시하여 타임존 오차 방지
+      const start = `${selectedDate}T00:00:00+09:00`;
+      const end = `${selectedDate}T23:59:59+09:00`;
 
       const { data, error } = await _supabase
         .from('dock_control')
@@ -576,7 +597,7 @@
       if (!_supabase) return;
       const statusBadge = document.getElementById('realtime-status');
 
-      _supabase
+      currentChannel = _supabase
         .channel('manager-dock-control-channel-v2')
         .on(
           'postgres_changes',
@@ -587,6 +608,14 @@
               playNotificationSound();
               showDesktopNotification(newCar);
               startTitleFlash();
+              
+              // [개선 5] 과거 날짜 조회 중 새 차량 입문 시 관리자 안내 및 오늘 날짜로 자동 전환 유도 또는 안내
+              const selectedDate = document.getElementById('date-filter').value;
+              const nowKstStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"});
+              const todayKst = new Date(nowKstStr).toISOString().split('T')[0];
+              if (selectedDate !== todayKst) {
+                console.log("알림: 현재 과거 날짜를 조회 중이어서 신규 입문 차량이 목록에 즉시 보이지 않을 수 있습니다.");
+              }
             } else if (payload.eventType === 'UPDATE') {
               const updatedCar = payload.new;
               if (updatedCar.status === '출문완료') {
@@ -747,6 +776,9 @@
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">조회된 데이터가 없습니다.</td></tr>`;
+        // [개선 2] 데이터가 없을 때 마스터 체크박스 해제 및 동기화
+        const selectAllCb = document.getElementById('select-all-checkbox');
+        if (selectAllCb) selectAllCb.checked = false;
         return;
       }
 
@@ -761,7 +793,7 @@
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-4 text-center">
-              <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
+              <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" onchange="updateMasterCheckboxState()">
             </td>
             <td class="p-4 font-mono text-slate-600 font-semibold text-base">${timeStr}</td>
             <td class="p-4 font-black text-slate-900 text-lg">${item.car_number || '-'}</td>
@@ -786,11 +818,27 @@
           }
         });
       }
+
+      // [개선 2] 렌더링 직후 마스터 체크박스 상태 동기화 함수 호출
+      updateMasterCheckboxState();
     }
 
     function toggleSelectAll(master) {
       const checkboxes = document.querySelectorAll('.row-checkbox');
       checkboxes.forEach(cb => cb.checked = master.checked);
+    }
+
+    // [개선 2] 개별 체크박스 변경 시 상단 마스터 체크박스 상태 동기화
+    function updateMasterCheckboxState() {
+      const master = document.getElementById('select-all-checkbox');
+      const checkboxes = document.querySelectorAll('.row-checkbox');
+      if (!master || checkboxes.length === 0) return;
+
+      const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+      const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+
+      master.checked = allChecked;
+      master.indeterminate = someChecked && !allChecked;
     }
 
     async function deleteSelectedRecords() {
