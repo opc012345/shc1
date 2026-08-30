@@ -98,7 +98,6 @@
 
   <!-- 앱 설치 안내 카드 영역 -->
   <div id="pwa-install-wrapper" class="hidden p-4 md:px-6 pb-0">
-    <!-- 1. 스마트 팁 카드 -->
     <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
       <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
         💡 현황판 담당자 전용 스마트 팁!
@@ -108,7 +107,6 @@
       </button>
     </div>
 
-    <!-- 2. 수동 설치 안내 버튼 -->
     <button onclick="toggleManualGuide()" class="w-full max-w-xl mx-auto bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs md:text-sm font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-all">
       <span class="flex items-center gap-2">
         <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
@@ -116,7 +114,6 @@
       <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
     </button>
 
-    <!-- 수동 설치 방법 상세 내용 -->
     <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
       <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
       <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
@@ -220,29 +217,32 @@
       deferredPrompt = e;
     });
 
-    // --- PC 환경 및 앱 감지 로직 ---
+    // --- XSS 방지 이스케이프 함수 ---
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     function checkEnvironmentAndToggleTips() {
       const ua = navigator.userAgent.toLowerCase();
-      
-      // 모바일 기기(스마트폰/태블릿) 여부 판단
       const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
-      
-      // 이미 PWA 앱(독립 실행) 상태인지 판단
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
       const installWrapper = document.getElementById('pwa-install-wrapper');
       const smartTipCard = document.getElementById('smart-tip-card');
 
-      // PC 브라우저이거나 이미 어플로 띄운 상태라면 설치 관련 배너 전체 숨김
       if (!isMobile || isStandalone) {
         if (installWrapper) installWrapper.classList.add('hidden');
         return;
       }
 
-      // 모바일 웹 브라우저 접속 환경일 때만 배너 노출
       if (installWrapper) installWrapper.classList.remove('hidden');
 
-      // 카카오톡/iOS 환경 체크하여 스마트 팁 조절
       const isKakao = ua.includes('kakaotalk');
       const isIOS = /iphone|ipad|ipod/.test(ua);
       const isOtherInApp = ua.includes('line') || ua.includes('inapp');
@@ -294,7 +294,6 @@
       fetchBoardData();
       subscribeRealtime();
 
-      // 🔄 화면이 다시 보이거나 네트워크가 복구될 때 실시간 데이터 강제 동기화
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
           console.log('앱이 활성화되어 최신 데이터를 동기화합니다.');
@@ -307,35 +306,10 @@
         fetchBoardData();
       });
 
-      // 5초마다 데이터 동기화 안전장치 추가
       setInterval(() => {
         fetchBoardData();
       }, 5000);
     };
-
-    function maskName(name) {
-      if (!name || name === '-' || name === 'null') return '-';
-      const str = String(name).trim();
-      if (str.length <= 1) return str;
-      if (str.length === 2) return str[0] + '*';
-      return str.slice(0, -1) + '*';
-    }
-
-    function maskPhone(phone) {
-      if (!phone || phone === '-' || phone === 'null') return '-';
-      const str = String(phone).trim();
-      const parts = str.split('-');
-      if (parts.length === 3) {
-        return `${parts[0]}-${parts[1]}-****`;
-      }
-      if (str.length === 11) {
-        return str.slice(0, 3) + '-' + str.slice(3, 7) + '-****';
-      }
-      if (str.length > 4) {
-        return str.slice(0, -4) + '****';
-      }
-      return str;
-    }
 
     function toggleAudio(event) {
       if (event) event.stopPropagation();
@@ -363,7 +337,6 @@
       }
     }
 
-    // 숫자를 '천백십일' 대신 '일 일 일 일' 형태로 띄어 읽도록 변환해 주는 함수
     function formatNumberToDigits(str) {
       if (!str) return '';
       return String(str).replace(/\d/g, (digit) => `${digit} `);
@@ -387,22 +360,15 @@
     async function fetchBoardData() {
       if (!_supabase) return;
 
-      // 💡 브라우저 로컬 시간 기준 오늘 날짜를 안전하게 추출 (UTC로 인한 전날 조회 문제 해결)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
       const day = String(now.getDate()).padStart(2, '0');
-      const today = `${year}-${month}-${day}`;
+      const todayStart = `${year}-${month}-${day}T00:00:00`;
 
-      const start = `${today}T00:00:00`;
-      const end = `${today}T23:59:59`;
-
-      const { data, error } = await _supabase
-        .from('dock_control')
-        .select('*')
-        .gte('created_at', start)
-        .lte('created_at', end)
-        .order('created_at', { ascending: true }); // 💡 먼저 도착한 순서대로 정렬 (오름차순)
+      const { data, error } = await _supabase.rpc('get_board_entries', {
+        p_today_start: todayStart
+      });
 
       if (error) {
         console.error('Error fetching data:', error);
@@ -469,13 +435,15 @@
           const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
           const isTop = index === 0;
 
-          const maskedDriver = maskName(item.driver_name);
-          const maskedPhone = maskPhone(item.phone_number);
-          const carNum = item.car_number || '-';
+          const maskedDriver = escapeHtml(item.driver_name);
+          const maskedPhone = escapeHtml(item.phone_number);
+          const carNum = escapeHtml(item.car_number || '-');
 
+          // 💡 인라인 onclick 제거 및 안전한 data-* 속성 적용
           return `
-            <div onclick="openExitModal('${item.id}', '${carNum}')" 
-                 class="p-4 md:p-5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${isTop ? 'highlight-card border-amber-500/80 bg-slate-900' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'} flex items-center justify-between gap-2">
+            <div class="waiting-card p-4 md:p-5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${isTop ? 'highlight-card border-amber-500/80 bg-slate-900' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'} flex items-center justify-between gap-2"
+                 data-id="${item.id}" 
+                 data-car="${carNum}">
               <div class="flex items-center gap-3 md:gap-5 min-w-0">
                 <span class="w-8 h-8 md:w-10 md:h-10 rounded-xl ${isTop ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'} font-black text-base md:text-xl flex items-center justify-center shrink-0">
                   ${index + 1}
@@ -502,6 +470,15 @@
             </div>
           `;
         }).join('');
+
+        // 💡 렌더링 직후 addEventListener로 안전하게 클릭 이벤트 부착
+        document.querySelectorAll('.waiting-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const id = card.getAttribute('data-id');
+            const car = card.getAttribute('data-car');
+            openExitModal(id, car);
+          });
+        });
       }
 
       const completedContainer = document.getElementById('completed-list');
@@ -512,13 +489,14 @@
       } else {
         completedContainer.innerHTML = completedList.slice(0, 6).map(item => {
           const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-          const maskedDriver = maskName(item.driver_name);
+          const maskedDriver = escapeHtml(item.driver_name);
+          const carNum = escapeHtml(item.car_number || '-');
 
           return `
             <div class="p-3 md:p-3.5 bg-slate-950/40 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs md:text-sm">
               <div class="flex items-center gap-2 md:gap-3 min-w-0">
                 <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i>
-                <span class="font-black text-slate-200 text-base md:text-lg truncate">${item.car_number || '-'}</span>
+                <span class="font-black text-slate-200 text-base md:text-lg truncate">${carNum}</span>
                 <span class="text-xs text-slate-400 truncate">(${maskedDriver})</span>
               </div>
               <span class="font-mono text-[10px] md:text-xs font-bold text-slate-500 shrink-0 ml-2">${timeStr}</span>
@@ -543,10 +521,9 @@
     async function confirmExit() {
       if (!selectedRecordId || !_supabase) return;
 
-      const { error } = await _supabase
-        .from('dock_control')
-        .update({ status: '출문완료' })
-        .eq('id', selectedRecordId);
+      const { error } = await _supabase.rpc('mark_exit_complete', {
+        p_id: selectedRecordId
+      });
 
       if (error) {
         alert('출문 처리 중 오류가 발생했습니다: ' + error.message);
@@ -554,6 +531,7 @@
       }
 
       closeExitModal();
+      fetchBoardData();
     }
   </script>
 </body>
