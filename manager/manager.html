@@ -16,7 +16,6 @@
   <link rel="icon" id="app-icon-fav" href="">
 
   <script>
-    // 1. SHC 로고 디자인 변경 (제공해주신 원형 스타일로 반영)
     const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="240" fill="#dc2626"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-style="italic" font-weight="900" font-size="200">SHC</text></svg>`;
     const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
     const logoUrl = URL.createObjectURL(logoBlob);
@@ -44,7 +43,6 @@
       animation: pulse-border 1.5s infinite;
     }
 
-    /* 📱 모바일 환경(768px 이하) 반응형 카드 변환 레이아웃 */
     @media (max-width: 768px) {
       .overflow-x-auto { overflow-x: visible !important; }
       table, thead, tbody, th, td, tr { display: block; }
@@ -86,47 +84,12 @@
         justify-content: flex-start;
         gap: 8px;
       }
-      tbody#table-body td:nth-child(1)::before {
-        content: "선택";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(2)::before {
-        content: "입문일시";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(3)::before {
-        content: "차량번호";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(4)::before {
-        content: "운전자 성함";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(5)::before {
-        content: "연락처";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
-
-      tbody#table-body td:nth-child(6)::before {
-        content: "상태";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+      tbody#table-body td:nth-child(1)::before { content: "선택"; font-size: 12px; font-weight: 700; color: #64748b; }
+      tbody#table-body td:nth-child(2)::before { content: "입문일시"; font-size: 12px; font-weight: 700; color: #64748b; }
+      tbody#table-body td:nth-child(3)::before { content: "차량번호"; font-size: 12px; font-weight: 700; color: #64748b; }
+      tbody#table-body td:nth-child(4)::before { content: "운전자 성함"; font-size: 12px; font-weight: 700; color: #64748b; }
+      tbody#table-body td:nth-child(5)::before { content: "연락처"; font-size: 12px; font-weight: 700; color: #64748b; }
+      tbody#table-body td:nth-child(6)::before { content: "상태"; font-size: 12px; font-weight: 700; color: #64748b; }
 
       tbody#table-body td:nth-child(7) {
         border-top: 1px solid #f1f5f9 !important;
@@ -135,12 +98,7 @@
         justify-content: space-between;
         gap: 6px;
       }
-      tbody#table-body td:nth-child(7)::before {
-        content: "관리";
-        font-size: 12px;
-        font-weight: 700;
-        color: #64748b;
-      }
+      tbody#table-body td:nth-child(7)::before { content: "관리"; font-size: 12px; font-weight: 700; color: #64748b; }
     }
   </style>
 </head>
@@ -150,23 +108,15 @@
   <div id="login-modal" class="fixed inset-0 bg-slate-900/90 z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
       <div class="text-center space-y-2">
-        <!-- 원형 로고 스타일 적용 -->
         <div class="inline-flex w-10 h-10 rounded-full bg-red-600 items-center justify-center font-black italic text-white text-xs mb-1 shadow">SHC</div>
         <h2 class="text-xl font-bold text-slate-900">차량 입출문 시스템 (담당자)</h2>
-        <p class="text-xs text-slate-500">접속 비밀번호를 입력해 주세요.</p>
+        <p class="text-xs text-slate-500">관리자 비밀번호를 입력해 주세요.</p>
       </div>
 
       <form onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 uppercase mb-1">비밀번호</label>
           <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 transition">
-        </div>
-
-        <div class="flex items-center justify-between pt-1">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="remember-me" class="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900" checked>
-            <span class="text-xs font-bold text-slate-600">로그인 상태 유지</span>
-          </label>
         </div>
 
         <button type="submit" id="login-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition text-sm shadow-md mt-2">
@@ -213,7 +163,6 @@
   <!-- 메인 컨텐츠 영역 -->
   <main class="w-full px-3 sm:px-6 py-4 sm:py-6 space-y-6">
 
-    <!-- PWA 앱 설치 안내 영역 -->
     <div id="install-banner-wrapper" class="hidden space-y-3 max-w-xl mx-auto">
       <div id="pwa-smart-box" class="hidden bg-[#161c27] text-white p-4 sm:p-5 rounded-2xl border border-slate-700/60 shadow-xl text-center space-y-3">
         <p class="text-sm sm:text-base font-extrabold text-amber-400 tracking-wide flex items-center justify-center gap-1.5">
@@ -244,16 +193,13 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
-      <!-- 좌측 대기 차량 정보 카드 목록 -->
       <div class="xl:col-span-1 space-y-4">
         <div id="waiting-cards-container" class="space-y-4">
         </div>
       </div>
 
-      <!-- 우측 관제 본문 -->
       <div class="xl:col-span-4 space-y-6">
 
-        <!-- 현황 요약 카드 -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div class="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex justify-between items-center">
             <div>
@@ -285,7 +231,6 @@
           </div>
         </div>
 
-        <!-- 검색 및 컨트롤 영역 -->
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
           <div class="relative w-full md:w-96">
             <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
@@ -313,7 +258,6 @@
           </div>
         </div>
 
-        <!-- 데이터 목록 -->
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-base">
@@ -347,8 +291,7 @@
   <script>
     const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i'; 
-    
-    const MANAGER_PASSWORD = 'cnfgkxla';
+    const MANAGER_EMAIL = 'opc012345@gmail.com'; // Supabase Auth 공용 관리자 계정 이메일 (gmail.com 정상 반영)
 
     let _supabase = null;
     let allRecords = [];
@@ -359,9 +302,20 @@
     let notificationQueue = [];
     let deferredPrompt = null;
 
-    // [개선 3, 4] 누적 방지를 위한 타이머 및 채널 관리 변수 추가
     let pollingInterval = null;
     let currentChannel = null;
+    let clockInterval = null;
+
+    // XSS 방어용 이스케이프 함수
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -391,7 +345,6 @@
       }
 
       if (wrapper) wrapper.classList.remove('hidden');
-
       if (isKakaoTalk || isIOS) {
         if (smartBox) smartBox.classList.add('hidden');
       }
@@ -424,7 +377,6 @@
 
       _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      // KST(한국 시간) 기준 오늘 날짜 계산
       const nowKst = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
       const year = nowKst.getFullYear();
       const month = String(nowKst.getMonth() + 1).padStart(2, '0');
@@ -432,16 +384,13 @@
       document.getElementById('date-filter').value = `${year}-${month}-${day}`;
 
       updateClock();
-      setInterval(updateClock, 1000);
+      if (clockInterval) clearInterval(clockInterval);
+      clockInterval = setInterval(updateClock, 1000);
 
-      let authCookie = localStorage.getItem('shc_manager_auth');
-      if (!authCookie) {
-        try {
-          authCookie = sessionStorage.getItem('shc_manager_auth');
-        } catch(err) {}
-      }
+      // Supabase Auth 세션 검증
+      const { data: { session } } = await _supabase.auth.getSession();
 
-      if (authCookie === 'true') {
+      if (session) {
         hideLoginModal();
         initSystem();
       } else {
@@ -457,28 +406,34 @@
       document.getElementById('login-modal').classList.add('hidden');
     }
 
-    function handleLogin(e) {
+    // Supabase Auth 로그인 처리
+    async function handleLogin(e) {
       e.preventDefault();
       const passwordInput = document.getElementById('login-password').value;
-      const rememberMe = document.getElementById('remember-me').checked;
       const errorMsg = document.getElementById('login-error-msg');
+      const submitBtn = document.getElementById('login-submit-btn');
 
-      if (passwordInput === MANAGER_PASSWORD) {
-        if (rememberMe) {
-          localStorage.setItem('shc_manager_auth', 'true');
-        } else {
-          sessionStorage.setItem('shc_manager_auth', 'true');
-        }
+      submitBtn.disabled = true;
+      submitBtn.innerText = '로그인 중...';
+
+      const { data, error } = await _supabase.auth.signInWithPassword({
+        email: MANAGER_EMAIL,
+        password: passwordInput
+      });
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = '로그인';
+
+      if (error) {
+        errorMsg.innerText = '비밀번호가 올바르지 않습니다.';
+        errorMsg.classList.remove('hidden');
+      } else {
         errorMsg.classList.add('hidden');
         hideLoginModal();
         initSystem();
-      } else {
-        errorMsg.innerText = '비밀번호가 올바르지 않습니다.';
-        errorMsg.classList.remove('hidden');
       }
     }
 
-    // [개선 3, 4] 로그아웃 시 기존 타이머 및 실시간 채널 깔끔하게 정리
     function cleanupSystem() {
       if (pollingInterval) {
         clearInterval(pollingInterval);
@@ -490,23 +445,25 @@
       }
     }
 
-    function handleLogout() {
+    async function handleLogout() {
       if (confirm('로그아웃 하시겠습니까?')) {
+        await _supabase.auth.signOut();
         cleanupSystem();
-        localStorage.removeItem('shc_manager_auth');
-        sessionStorage.removeItem('shc_manager_auth');
+        if (clockInterval) {
+          clearInterval(clockInterval);
+          clockInterval = null;
+        }
         document.getElementById('login-password').value = '';
         showLoginModal();
       }
     }
 
     function initSystem() {
-      cleanupSystem(); // 중복 방지를 위해 기존 세션 정리 후 시작
+      cleanupSystem();
       checkNotificationStatus();
       fetchData();
       subscribeRealtime();
       
-      // [개선 3] 실시간 구독이 주 역할을 하므로, 폴링 주기를 30초(연결 백업용)로 조정하여 부하 감소
       pollingInterval = setInterval(() => {
         fetchData();
       }, 30000);
@@ -573,7 +530,6 @@
       if (!_supabase) return;
       const selectedDate = document.getElementById('date-filter').value;
       
-      // [개선 1] 브라우저 로컬 시간대 대신 KST(+09:00) 오프셋을 명시하여 타임존 오차 방지
       const start = `${selectedDate}T00:00:00+09:00`;
       const end = `${selectedDate}T23:59:59+09:00`;
 
@@ -608,14 +564,6 @@
               playNotificationSound();
               showDesktopNotification(newCar);
               startTitleFlash();
-              
-              // [개선 5] 과거 날짜 조회 중 새 차량 입문 시 관리자 안내 및 오늘 날짜로 자동 전환 유도 또는 안내
-              const selectedDate = document.getElementById('date-filter').value;
-              const nowKstStr = new Date().toLocaleString("en-US", {timeZone: "Asia/Seoul"});
-              const todayKst = new Date(nowKstStr).toISOString().split('T')[0];
-              if (selectedDate !== todayKst) {
-                console.log("알림: 현재 과거 날짜를 조회 중이어서 신규 입문 차량이 목록에 즉시 보이지 않을 수 있습니다.");
-              }
             } else if (payload.eventType === 'UPDATE') {
               const updatedCar = payload.new;
               if (updatedCar.status === '출문완료') {
@@ -671,17 +619,17 @@
             <div class="space-y-3">
               <div>
                 <p class="text-[11px] text-slate-400 font-medium">차량 번호</p>
-                <p class="text-2xl font-black text-amber-400 tracking-tight mt-0.5">${item.car_number || '-'}</p>
+                <p class="text-2xl font-black text-amber-400 tracking-tight mt-0.5">${escapeHtml(item.car_number) || '-'}</p>
               </div>
               
               <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
                 <div>
                   <p class="text-[11px] text-slate-400 font-medium">운전자 성함</p>
-                  <p class="text-sm font-bold text-slate-200 mt-0.5">${item.driver_name || '-'}</p>
+                  <p class="text-sm font-bold text-slate-200 mt-0.5">${escapeHtml(item.driver_name) || '-'}</p>
                 </div>
                 <div>
                   <p class="text-[11px] text-slate-400 font-medium">연락처</p>
-                  <p class="text-xs font-mono text-slate-300 mt-1">${item.phone_number || '-'}</p>
+                  <p class="text-xs font-mono text-slate-300 mt-1">${escapeHtml(item.phone_number) || '-'}</p>
                 </div>
               </div>
 
@@ -776,12 +724,12 @@
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="p-10 text-center text-slate-400 font-medium text-base">조회된 데이터가 없습니다.</td></tr>`;
-        // [개선 2] 데이터가 없을 때 마스터 체크박스 해제 및 동기화
         const selectAllCb = document.getElementById('select-all-checkbox');
         if (selectAllCb) selectAllCb.checked = false;
         return;
       }
 
+      // XSS 방어(escapeHtml) 적용
       tbody.innerHTML = filtered.map(item => {
         const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const status = item.status || '대기중';
@@ -796,9 +744,9 @@
               <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer" onchange="updateMasterCheckboxState()">
             </td>
             <td class="p-4 font-mono text-slate-600 font-semibold text-base">${timeStr}</td>
-            <td class="p-4 font-black text-slate-900 text-lg">${item.car_number || '-'}</td>
-            <td class="p-4 font-bold text-slate-800 text-base">${item.driver_name || '-'}</td>
-            <td class="p-4 text-slate-600 font-mono text-base font-medium">${item.phone_number || '-'}</td>
+            <td class="p-4 font-black text-slate-900 text-lg">${escapeHtml(item.car_number) || '-'}</td>
+            <td class="p-4 font-bold text-slate-800 text-base">${escapeHtml(item.driver_name) || '-'}</td>
+            <td class="p-4 text-slate-600 font-mono text-base font-medium">${escapeHtml(item.phone_number) || '-'}</td>
             <td class="p-4">${statusBadge}</td>
             <td class="p-4 text-center">
               ${status === '대기중' ? `
@@ -819,7 +767,6 @@
         });
       }
 
-      // [개선 2] 렌더링 직후 마스터 체크박스 상태 동기화 함수 호출
       updateMasterCheckboxState();
     }
 
@@ -828,7 +775,6 @@
       checkboxes.forEach(cb => cb.checked = master.checked);
     }
 
-    // [개선 2] 개별 체크박스 변경 시 상단 마스터 체크박스 상태 동기화
     function updateMasterCheckboxState() {
       const master = document.getElementById('select-all-checkbox');
       const checkboxes = document.querySelectorAll('.row-checkbox');
