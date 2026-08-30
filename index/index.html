@@ -339,10 +339,10 @@
     </div>
 
     <!-- 2. 스마트 팁 바로 아래 수동 설치 안내 버튼 (기본 숨김 처리) -->
-  <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert('수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n• 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n• [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰(Safari):\n• 하단 중앙 공유 버튼(↑) 클릭\n• [홈 화면에 추가] 선택')">
-  <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
-  <i class="fa-solid fa-chevron-right"></i>
-</button>
+    <button type="button" class="manual-install-btn" id="manualInstallBtn" style="display: none;" onclick="alert('수동 앱 설치 방법 안내\n\n1. 카카오톡으로 접속 시:\n• 우측 하단/상단 점 3개(⋮ 또는 ···) 클릭\n• [다른 브라우저로 열기] 선택 후 아래 진행\n\n2. 아이폰(Safari):\n• 하단 중앙 공유 버튼(↑) 클릭\n• [홈 화면에 추가] 선택')">
+      <span><i class="fa-solid fa-mobile-screen-button" style="color:#1d4ed8; margin-right: 6px;"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법</span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
 
     <div class="header-guide-box">
       <div class="header-sub-main">
@@ -636,25 +636,22 @@
         return;
       }
 
-      var botToken = "8982132348:AAG-7yv6_VlKM0KQw1LGBMAEYA9KOTq3Uuo";
-      var chatId = "-5175407977";
-      
-      var message = "🚨 [신규 차량 입문]\n\n" +
-                    "🚛 차량번호: " + carNumber + "\n" +
-                    "👤 운전기사: " + driverName + "\n" +
-                    "📞 연락처: " + phoneNumber;
+      // 🔴 노출되던 텔레그램 직접 호출 코드를 제거하고 Make.com 웹훅 호출로 변경했습니다.
+      var MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/여기에_본인의_웹훅_주소_입력"; // 본인의 웹훅 URL로 교체 필요
 
       try {
-        await fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
+        await fetch(MAKE_WEBHOOK_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            chat_id: chatId,
-            text: message
+            car_number: carNumber,
+            driver_name: driverName,
+            phone_number: phoneNumber,
+            timestamp: new Date().toISOString()
           })
         });
       } catch (tgError) {
-        console.error("텔레그램 전송 실패:", tgError);
+        console.error("웹훅 전송 실패:", tgError);
       }
 
       btn.disabled = false;
