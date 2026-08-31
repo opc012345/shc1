@@ -217,6 +217,18 @@
       deferredPrompt = e;
     });
 
+    // --- 이름 마스킹 함수 수정 반영 ---
+    function maskName(name) {
+      if (!name) return '-';
+      const trimmed = name.trim();
+      if (trimmed.length <= 1) return trimmed;
+      if (trimmed.length === 2) {
+        return trimmed.substring(0, 1) + '*';
+      }
+      // 3글자 이상인 경우 첫 글자와 마지막 글자만 남기고 가운데를 별표로 처리
+      return trimmed.substring(0, 1) + '*' + trimmed.substring(trimmed.length - 1);
+    }
+
     // --- XSS 방지 이스케이프 함수 ---
     function escapeHtml(str) {
       if (!str) return '';
@@ -435,11 +447,11 @@
           const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
           const isTop = index === 0;
 
-          const maskedDriver = escapeHtml(item.driver_name);
+          // maskName 적용 및 XSS 방지 이스케이프 처리
+          const maskedDriver = escapeHtml(maskName(item.driver_name));
           const maskedPhone = escapeHtml(item.phone_number);
           const carNum = escapeHtml(item.car_number || '-');
 
-          // 💡 인라인 onclick 제거 및 안전한 data-* 속성 적용
           return `
             <div class="waiting-card p-4 md:p-5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${isTop ? 'highlight-card border-amber-500/80 bg-slate-900' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'} flex items-center justify-between gap-2"
                  data-id="${item.id}" 
@@ -471,7 +483,6 @@
           `;
         }).join('');
 
-        // 💡 렌더링 직후 addEventListener로 안전하게 클릭 이벤트 부착
         document.querySelectorAll('.waiting-card').forEach(card => {
           card.addEventListener('click', () => {
             const id = card.getAttribute('data-id');
@@ -489,7 +500,7 @@
       } else {
         completedContainer.innerHTML = completedList.slice(0, 6).map(item => {
           const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
-          const maskedDriver = escapeHtml(item.driver_name);
+          const maskedDriver = escapeHtml(maskName(item.driver_name));
           const carNum = escapeHtml(item.car_number || '-');
 
           return `
