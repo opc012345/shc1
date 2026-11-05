@@ -1,16 +1,21 @@
 {
-  "name": "신흥정밀 차량 현황판",
-  "short_name": "차량현황판",
+  "name": "SHC 차량 입출문 관제",
+  "short_name": "차량관리 담당자용",
   "id": "./",
-  "start_url": "./board.html",
+  "start_url": "./manager.html",
   "scope": "./",
-  "display": "browser",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "./icon.png",
       "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]
