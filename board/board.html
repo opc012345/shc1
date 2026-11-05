@@ -211,6 +211,7 @@
     let isAudioEnabled = false;
     let selectedRecordId = null;
     let deferredPrompt = null;
+    let notifiedCarIds = new Set(); // 중복 알림 방지용 세트
 
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -228,7 +229,7 @@
       return trimmed.substring(0, 1) + '*' + trimmed.substring(trimmed.length - 1);
     }
 
-    // --- 전화번호 마스킹 함수 추가 ---
+    // --- 전화번호 마스킹 함수 ---
     function maskPhone(phone) {
       if (!phone) return '-';
       const clean = phone.replace(/[^0-9]/g, '');
@@ -329,6 +330,7 @@
         fetchBoardData();
       });
 
+      // 5초 주기 폴링 (이중 감시 백업 역할)
       setInterval(() => {
         fetchBoardData();
       }, 5000);
@@ -365,12 +367,32 @@
       return String(str).replace(/\d/g, (digit) => `${digit} `);
     }
 
+    // --- 음성 재생 및 오류 표시 함수 ---
     function speakTTS(text) {
-      if ('speechSynthesis' in window && isAudioEnabled) {
+      const audioNotice = document.getElementById('audio-notice');
+
+      if (!('speechSynthesis' in window)) {
+        if (audioNotice) {
+          audioNotice.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 브라우저 음성 미지원 오류`;
+          audioNotice.className = "text-[11px] md:text-xs text-rose-400 bg-rose-950/50 border border-rose-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0";
+        }
+        return;
+      }
+
+      if (isAudioEnabled) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ko-KR';
         utterance.rate = 0.9;
+        
+        utterance.onerror = function(event) {
+          console.error('TTS 재생 오류 발생:', event);
+          if (audioNotice) {
+            audioNotice.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 음성 재생 오류 (버튼 재클릭 필요)`;
+            audioNotice.className = "text-[11px] md:text-xs text-rose-400 bg-rose-950/50 border border-rose-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0";
+          }
+        };
+
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -378,6 +400,27 @@
     function updateClock() {
       const now = new Date();
       document.getElementById('current-clock').innerText = now.toLocaleTimeString('ko-KR', { hour12: false });
+    }
+
+    // --- 신규 차량 공통 알림 체크 로직 (이중 감시용) ---
+    function processRecordsForNotification(records) {
+      const waitingList = records.filter(i => (i.status || '대기중') === '대기중');
+
+      waitingList.forEach(item => {
+        if (!notifiedCarIds.has(item.id)) {
+          notifiedCarIds.add(item.id);
+          const formattedCarNum = formatNumberToDigits(item.car_number);
+          speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
+        }
+      });
+
+      // 대기 목록에서 사라진 차량은 세트에서 제거하여 메모리 관리
+      const currentWaitingIds = new Set(waitingList.map(i => i.id));
+      notifiedCarIds.forEach(id => {
+        if (!currentWaitingIds.has(id)) {
+          notifiedCarIds.delete(id);
+        }
+      });
     }
 
     async function fetchBoardData() {
@@ -400,6 +443,9 @@
 
       allRecords = data || [];
       renderBoard();
+      
+      // 5초 주기 폴링 시 누락된 신규 차량 체크
+      processRecordsForNotification(allRecords);
     }
 
     function subscribeRealtime() {
@@ -414,8 +460,11 @@
           (payload) => {
             if (payload.eventType === 'INSERT') {
               const newCar = payload.new;
-              const formattedCarNum = formatNumberToDigits(newCar.car_number);
-              speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
+              if (!notifiedCarIds.has(newCar.id)) {
+                notifiedCarIds.add(newCar.id);
+                const formattedCarNum = formatNumberToDigits(newCar.car_number);
+                speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
+              }
             } else if (payload.eventType === 'UPDATE') {
               const updated = payload.new;
               if (updated.status === '출문완료') {
@@ -458,7 +507,6 @@
           const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
           const isTop = index === 0;
 
-          // 마스킹 함수 적용 (이름 및 전화번호)
           const maskedDriver = escapeHtml(maskName(item.driver_name));
           const maskedPhone = escapeHtml(maskPhone(item.phone_number));
           const carNum = escapeHtml(item.car_number || '-');
