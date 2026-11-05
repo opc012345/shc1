@@ -1,10 +1,8 @@
 {
   "name": "SHC 차량 입출문 관제",
   "short_name": "차량관리 담당자용",
-  "id": "./",
   "start_url": "./manager.html",
-  "scope": "./",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
