@@ -4,7 +4,7 @@
   "id": "./",
   "start_url": "./board.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#020617",
   "theme_color": "#020617",
   "icons": [
