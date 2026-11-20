@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'self' https://hlhjmnsgqhysvilltfpf.supabase.co wss://hlhjmnsgqhysvilltfpf.supabase.co">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신흥정밀 납품차량 현황</title>
+  
+  <!-- PWA 기본 메타태그 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="신흥정밀 납품차량 현황">
+  
+  <!-- SHC 원형 로고 아이콘 -->
+  <link rel="apple-touch-icon" id="app-icon-apple" href="">
+  <link rel="icon" id="app-icon-fav" href="">
+
+  <!-- 동적 PWA Manifest 및 Service Worker 자동 생성 스크립트 -->
+  <script>
+    const shcLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><circle cx="256" cy="256" r="256" fill="#dc2626"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="sans-serif" font-weight="900" font-style="italic" font-size="190">SHC</text></svg>`;
+    const logoBlob = new Blob([shcLogoSvg], { type: 'image/svg+xml' });
+    const logoUrl = URL.createObjectURL(logoBlob);
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('app-icon-apple').href = logoUrl;
+      document.getElementById('app-icon-fav').href = logoUrl;
+    });
+
+    const manifest = {
+      name: "신흥정밀 납품차량 현황",
+      short_name: "신흥정밀 납품차량 현황",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#020617",
+      theme_color: "#020617",
+      icons: [{
+        src: logoUrl,
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => self.skipWaiting());
+        self.addEventListener('activate', (e) => self.clients.claim());
+        self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request)); });
+      `;
+      const swBlob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(err => console.log('SW register failed:', err));
+    }
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulse-bg {
+      0%, 100% { background-color: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.8); }
+      50% { background-color: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.3); }
+    }
+    .highlight-card {
+      animation: pulse-bg 2s infinite;
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col font-sans select-none">
+
+  <!-- 헤더 (상단) -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 md:px-8 py-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3 shadow-2xl shrink-0">
+    <div class="flex items-center justify-between md:justify-start gap-2.5 md:gap-4">
+      <div class="flex items-center gap-2.5 md:gap-3">
+        <div class="w-9 h-9 md:w-12 md:h-12 bg-red-600 rounded-full flex items-center justify-center font-black text-white text-xs md:text-base tracking-tighter italic shadow-md border-2 border-red-500/50 shrink-0">
+          SHC
+        </div>
+        <h1 class="text-lg md:text-3xl font-black tracking-tight text-white whitespace-nowrap">신흥정밀 납품차량 현황판</h1>
+      </div>
+      <span id="connection-status" class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[11px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-full font-bold shrink-0">연결 확인 중...</span>
+    </div>
+
+    <div class="flex items-center justify-between w-full md:w-auto gap-2 md:gap-4">
+      <button id="audio-notice" onclick="toggleAudio(event)" class="text-[11px] md:text-xs text-amber-400 bg-amber-950/50 border border-amber-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-900/50 transition-all cursor-pointer shrink-0">
+        <i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화
+      </button>
+      <div id="current-clock" class="text-lg md:text-3xl font-mono font-bold text-slate-300 whitespace-nowrap text-right shrink-0">00:00:00</div>
+    </div>
+  </header>
+
+  <!-- 앱 설치 안내 카드 영역 -->
+  <div id="pwa-install-wrapper" class="hidden p-4 md:px-6 pb-0">
+    <div id="smart-tip-card" class="bg-amber-50/10 border border-amber-500/40 rounded-2xl p-4 text-center max-w-xl mx-auto shadow-lg mb-3">
+      <p class="text-amber-300 text-xs md:text-sm font-bold mb-2 flex items-center justify-center gap-1">
+        💡 현황판 담당자 전용 스마트 팁!
+      </p>
+      <button onclick="installPWA()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl shadow-md text-sm md:text-base flex items-center justify-center gap-2 transition-all">
+        <i class="fa-solid fa-download"></i> 클릭 한 번으로 바탕화면에 앱 설치
+      </button>
+    </div>
+
+    <button onclick="toggleManualGuide()" class="w-full max-w-xl mx-auto bg-blue-950/40 border border-blue-500/40 hover:bg-blue-900/30 text-blue-300 text-xs md:text-sm font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-all">
+      <span class="flex items-center gap-2">
+        <i class="fa-mobile-screen-button"></i> 아이폰 / 카카오톡 접속 시 수동 설치 방법
+      </span>
+      <i id="guide-arrow" class="fa-solid fa-chevron-right transition-transform"></i>
+    </button>
+
+    <div id="manual-guide-content" class="hidden max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-4 mt-2 text-xs text-slate-300 space-y-2">
+      <p class="font-bold text-amber-400">📱 아이폰 (Safari)</p>
+      <p>하단 중앙 [공유] 버튼 클릭 ➔ [홈 화면에 추가] 선택</p>
+      <p class="font-bold text-amber-400 mt-2">💬 카카오톡 내부 브라우저인 경우</p>
+      <p>우측 하단 [⋮] 또는 [⋯] 버튼 클릭 ➔ [다른 브라우저로 열기] 후 설치 진행</p>
+    </div>
+  </div>
+
+  <!-- 메인 디스플레이 영역 -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 p-4 md:p-6 overflow-y-auto lg:overflow-hidden">
+
+    <!-- 좌측: 현재 구역 내 대기중 차량 -->
+    <section class="lg:col-span-7 bg-slate-900/80 rounded-2xl md:rounded-3xl border border-slate-800 p-4 md:p-6 flex flex-col shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 md:pb-4 md:mb-4">
+        <div class="flex items-center gap-2 md:gap-3">
+          <div class="w-3 h-6 md:w-4 md:h-8 bg-amber-500 rounded-full"></div>
+          <h2 class="text-lg md:text-2xl font-black text-slate-100">입문 대기 차량</h2>
+        </div>
+        <span class="text-sm md:text-lg font-bold text-slate-400">총 <span id="waiting-count" class="text-xl md:text-3xl font-black text-amber-400 mx-1">0</span>대 대기 중</span>
+      </div>
+
+      <div id="waiting-list" class="flex-1 space-y-3 md:space-y-4 overflow-y-auto no-scrollbar pr-1 min-h-[160px]">
+      </div>
+    </section>
+
+    <!-- 우측: 상태 요약 & 최근 출문 완료 차량 -->
+    <section class="lg:col-span-5 flex flex-col gap-4 md:gap-6">
+
+      <div class="grid grid-cols-2 gap-3 md:gap-4">
+        <div class="bg-slate-900/80 border border-slate-800 p-4 md:p-5 rounded-2xl flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">금일 총 입문</p>
+            <p id="stat-total" class="text-2xl md:text-4xl font-black text-slate-100 mt-1">0</p>
+          </div>
+          <div class="w-10 h-10 md:w-12 md:h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center text-xl md:text-2xl"><i class="fa-solid fa-truck"></i></div>
+        </div>
+
+        <div class="bg-slate-900/80 border border-slate-800 p-4 md:p-5 rounded-2xl flex items-center justify-between">
+          <div>
+            <p class="text-xs font-bold text-slate-400 uppercase">출문 완료</p>
+            <p id="stat-completed" class="text-2xl md:text-4xl font-black text-emerald-400 mt-1">0</p>
+          </div>
+          <div class="w-10 h-10 md:w-12 md:h-12 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center text-xl md:text-2xl"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+      </div>
+
+      <div class="flex-1 bg-slate-900/80 rounded-2xl md:rounded-3xl border border-slate-800 p-4 md:p-6 flex flex-col shadow-2xl overflow-hidden min-h-[180px]">
+        <div class="flex items-center gap-2 md:gap-3 border-b border-slate-800 pb-3 mb-3 md:pb-4 md:mb-4">
+          <div class="w-3 h-6 md:w-4 md:h-8 bg-emerald-500 rounded-full"></div>
+          <h2 class="text-lg md:text-2xl font-black text-slate-100">최근 출문 완료</h2>
+        </div>
+
+        <div id="completed-list" class="flex-1 space-y-2.5 md:space-y-3 overflow-y-auto no-scrollbar">
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- 출문 처리 팝업 (모달) -->
+  <div id="exit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4" onclick="closeExitModal(event)">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl text-center" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center mb-4 md:mb-6 border-b border-slate-800 pb-3 md:pb-4">
+        <h3 class="text-xl md:text-2xl font-black text-white flex items-center gap-2 md:gap-3">
+          <i class="fa-solid fa-truck-ramp-box text-amber-500"></i>
+          출문 확인
+        </h3>
+        <button onclick="closeExitModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
+      </div>
+
+      <div class="py-4 md:py-6 mb-4 md:mb-6 bg-slate-950 rounded-2xl border border-slate-800">
+        <p class="text-xs md:text-sm font-bold text-slate-400 mb-1 md:mb-2">선택된 차량 번호</p>
+        <span id="modal-car-number" class="text-3xl md:text-4xl font-black text-amber-400 tracking-tight">-</span>
+        <p class="text-xs text-slate-500 mt-2 md:mt-3">해당 차량을 출문 처리하시겠습니까?</p>
+      </div>
+
+      <div class="flex gap-3 md:gap-4">
+        <button onclick="closeExitModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 md:py-4 rounded-xl text-base md:text-lg transition-all">
+          취소
+        </button>
+        <button onclick="confirmExit()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-3 md:py-4 rounded-xl text-base md:text-lg shadow-lg shadow-emerald-900/50 transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> 출문 완료
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://hlhjmnsgqhysvilltfpf.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_7e7F7HouzfIP6onOQgY46Q_x81HtP1i';
+
+    let _supabase = null;
+    let allRecords = [];
+    let isAudioEnabled = false;
+    let selectedRecordId = null;
+    let deferredPrompt = null;
+    let notifiedCarIds = new Set(); // 중복 알림 방지용 세트
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    // --- 이름 마스킹 함수 ---
+    function maskName(name) {
+      if (!name) return '-';
+      if (name.includes('*')) return name;
+      const trimmed = name.trim();
+      if (trimmed.length <= 1) return trimmed;
+      if (trimmed.length === 2) {
+        return trimmed.substring(0, 1) + '*';
+      }
+      return trimmed.substring(0, 1) + '*' + trimmed.substring(trimmed.length - 1);
+    }
+
+    // --- 전화번호 마스킹 함수 ---
+    function maskPhone(phone) {
+      if (!phone) return '-';
+      if (phone.includes('*')) return phone; 
+      const clean = phone.replace(/[^0-9]/g, '');
+      if (clean.length === 11) {
+        return clean.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-****');
+      } else if (clean.length === 10) {
+        return clean.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-****');
+      }
+      return phone.substring(0, 7) + '-****';
+    }
+
+    // --- XSS 방지 이스케이프 함수 ---
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function checkEnvironmentAndToggleTips() {
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      const installWrapper = document.getElementById('pwa-install-wrapper');
+      const smartTipCard = document.getElementById('smart-tip-card');
+
+      if (!isMobile || isStandalone) {
+        if (installWrapper) installWrapper.classList.add('hidden');
+        return;
+      }
+
+      if (installWrapper) installWrapper.classList.remove('hidden');
+
+      const isKakao = ua.includes('kakaotalk');
+      const isIOS = /iphone|ipad|ipod/.test(ua);
+      const isOtherInApp = ua.includes('line') || ua.includes('inapp');
+
+      if ((isKakao || isIOS || isOtherInApp) && smartTipCard) {
+        smartTipCard.classList.add('hidden');
+      }
+    }
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('앱 설치가 수락되었습니다.');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        toggleManualGuide(true);
+      }
+    }
+
+    function toggleManualGuide(forceOpen = false) {
+      const guide = document.getElementById('manual-guide-content');
+      const arrow = document.getElementById('guide-arrow');
+      if (forceOpen || guide.classList.contains('hidden')) {
+        guide.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-90');
+      } else {
+        guide.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-90');
+      }
+    }
+
+    window.onload = () => {
+      checkEnvironmentAndToggleTips();
+
+      _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      const savedAudioState = localStorage.getItem('shc_audio_enabled');
+      if (savedAudioState === 'true') {
+        applyAudioUI(true);
+      }
+
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      fetchBoardData();
+      subscribeRealtime();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          console.log('앱이 활성화되어 최신 데이터를 동기화합니다.');
+          fetchBoardData();
+        }
+      });
+
+      window.addEventListener('online', () => {
+        console.log('네트워크 연결이 복구되었습니다.');
+        fetchBoardData();
+      });
+
+      // 5초 주기 폴링 (이중 감시 백업 역할)
+      setInterval(() => {
+        fetchBoardData();
+      }, 5000);
+    };
+
+    function toggleAudio(event) {
+      if (event) event.stopPropagation();
+
+      isAudioEnabled = !isAudioEnabled;
+      localStorage.setItem('shc_audio_enabled', isAudioEnabled ? 'true' : 'false');
+      applyAudioUI(isAudioEnabled);
+
+      if (isAudioEnabled) {
+        speakTTS('음성 알림이 활성화되었습니다.');
+      }
+    }
+
+    function applyAudioUI(enabled) {
+      isAudioEnabled = enabled;
+      const notice = document.getElementById('audio-notice');
+      if (notice) {
+        if (enabled) {
+          notice.className = "text-[11px] md:text-xs text-emerald-400 bg-emerald-950/50 border border-emerald-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-emerald-900/50 transition-all cursor-pointer shrink-0";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high"></i> 음성 알림 활성화됨 (클릭 시 끄기)`;
+        } else {
+          notice.className = "text-[11px] md:text-xs text-amber-400 bg-amber-950/50 border border-amber-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-amber-900/50 transition-all cursor-pointer shrink-0";
+          notice.innerHTML = `<i class="fa-solid fa-volume-high animate-bounce"></i> 버튼 클릭 시 음성 알림 활성화`;
+        }
+      }
+    }
+
+    function formatNumberToDigits(str) {
+      if (!str) return '';
+      return String(str).replace(/\d/g, (digit) => `${digit} `);
+    }
+
+    // --- 음성 재생 및 오류 표시 함수 ---
+    function speakTTS(text) {
+      const audioNotice = document.getElementById('audio-notice');
+
+      if (!('speechSynthesis' in window)) {
+        if (audioNotice) {
+          audioNotice.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 브라우저 음성 미지원 오류`;
+          audioNotice.className = "text-[11px] md:text-xs text-rose-400 bg-rose-950/50 border border-rose-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0";
+        }
+        return;
+      }
+
+      if (isAudioEnabled) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.9;
+        
+        utterance.onerror = function(event) {
+          console.error('TTS 재생 오류 발생:', event);
+          if (audioNotice) {
+            audioNotice.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-400"></i> 음성 재생 오류 (버튼 재클릭 필요)`;
+            audioNotice.className = "text-[11px] md:text-xs text-rose-400 bg-rose-950/50 border border-rose-800/80 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 shrink-0";
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('current-clock').innerText = now.toLocaleTimeString('ko-KR', { hour12: false });
+    }
+
+    // --- 신규 차량 공통 알림 체크 로직 (이중 감시용) 및 부모창 신호 발송 ---
+    function processRecordsForNotification(records) {
+      const waitingList = records.filter(i => (i.status || '대기중') === '대기중');
+
+      waitingList.forEach(item => {
+        if (!notifiedCarIds.has(item.id)) {
+          notifiedCarIds.add(item.id);
+          const formattedCarNum = formatNumberToDigits(item.car_number);
+          
+          // 1. 음성(TTS) 알림 출력
+          speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
+
+          // 2. 부모창(all_in_one.html 대시보드)으로 슬라이드 인터럽트 신호 발송
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'VEHICLE_ARRIVED' }, '*');
+          }
+        }
+      });
+
+      const currentWaitingIds = new Set(waitingList.map(i => i.id));
+      notifiedCarIds.forEach(id => {
+        if (!currentWaitingIds.has(id)) {
+          notifiedCarIds.delete(id);
+        }
+      });
+    }
+
+    async function fetchBoardData() {
+      if (!_supabase) return;
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const todayStart = `${year}-${month}-${day}T00:00:00`;
+
+      const { data, error } = await _supabase.rpc('get_board_entries', {
+        p_today_start: todayStart
+      });
+
+      if (error) {
+        console.error('Error fetching data:', error);
+        return;
+      }
+
+      allRecords = data || [];
+      renderBoard();
+      
+      processRecordsForNotification(allRecords);
+    }
+
+    function subscribeRealtime() {
+      if (!_supabase) return;
+      const statusBadge = document.getElementById('connection-status');
+
+      _supabase
+        .channel('public:board_control')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'dock_control' },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              const newCar = payload.new;
+              if (!notifiedCarIds.has(newCar.id)) {
+                notifiedCarIds.add(newCar.id);
+                const formattedCarNum = formatNumberToDigits(newCar.car_number);
+                
+                // 1. 음성(TTS) 알림 출력
+                speakTTS(`신규 입문. ${formattedCarNum} 차량이 등록 되었습니다.`);
+
+                // 2. 부모창(all_in_one.html 대시보드)으로 슬라이드 인터럽트 신호 발송
+                if (window.parent && window.parent !== window) {
+                  window.parent.postMessage({ type: 'VEHICLE_ARRIVED' }, '*');
+                }
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const updated = payload.new;
+              if (updated.status === '출문완료') {
+                const formattedCarNum = formatNumberToDigits(updated.car_number);
+                speakTTS(`${formattedCarNum} 차량, 출문 처리되었습니다.`);
+              }
+            }
+            fetchBoardData();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            statusBadge.innerText = '실시간 연결됨';
+            statusBadge.className = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-full font-bold shrink-0';
+          } else {
+            statusBadge.innerText = '재연결 중...';
+            statusBadge.className = 'bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] md:text-xs px-2 py-0.5 md:px-2.5 md:py-1 rounded-full font-bold shrink-0';
+          }
+        });
+    }
+
+    function renderBoard() {
+      const waitingList = allRecords.filter(i => (i.status || '대기중') === '대기중');
+      const completedList = allRecords.filter(i => i.status === '출문완료');
+
+      document.getElementById('stat-total').innerText = allRecords.length;
+      document.getElementById('stat-completed').innerText = completedList.length;
+      document.getElementById('waiting-count').innerText = waitingList.length;
+
+      const waitingContainer = document.getElementById('waiting-list');
+      if (waitingList.length === 0) {
+        waitingContainer.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-600 py-10 md:py-16">
+            <i class="fa-solid fa-truck text-4xl md:text-6xl mb-3 md:mb-4"></i>
+            <p class="text-base md:text-xl font-bold">현재 입문 대기 중인 차량이 없습니다.</p>
+          </div>
+        `;
+      } else {
+        waitingContainer.innerHTML = waitingList.map((item, index) => {
+          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          const isTop = index === 0;
+
+          const maskedDriver = escapeHtml(maskName(item.driver_name));
+          const maskedPhone = escapeHtml(maskPhone(item.phone_number));
+          const carNum = escapeHtml(item.car_number || '-');
+
+          return `
+            <div class="waiting-card p-4 md:p-5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${isTop ? 'highlight-card border-amber-500/80 bg-slate-900' : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'} flex items-center justify-between gap-2"
+                 data-id="${escapeHtml(item.id)}" 
+                 data-car="${carNum}">
+              <div class="flex items-center gap-3 md:gap-5 min-w-0">
+                <span class="w-8 h-8 md:w-10 md:h-10 rounded-xl ${isTop ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300'} font-black text-base md:text-xl flex items-center justify-center shrink-0">
+                  ${index + 1}
+                </span>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <p class="text-xl md:text-3xl font-black text-amber-400 tracking-tight truncate">${carNum}</p>
+                  </div>
+                  <p class="text-xs md:text-base text-slate-400 font-bold mt-0.5 md:mt-1 truncate">
+                    <span class="text-slate-200">${maskedDriver}</span> | 
+                    <span class="text-slate-300 font-mono">${maskedPhone}</span>
+                  </p>
+                </div>
+              </div>
+              <div class="text-right flex items-center gap-2 md:gap-4 shrink-0">
+                <div>
+                  <span class="text-[10px] md:text-xs font-bold text-slate-500 uppercase block">입문 시간</span>
+                  <span class="text-sm md:text-xl font-mono font-bold text-slate-300">${timeStr}</span>
+                </div>
+                <div class="text-slate-500 text-base md:text-lg">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        document.querySelectorAll('.waiting-card').forEach(card => {
+          card.addEventListener('click', () => {
+            const id = card.getAttribute('data-id');
+            const car = card.getAttribute('data-car');
+            openExitModal(id, car);
+          });
+        });
+      }
+
+      const completedContainer = document.getElementById('completed-list');
+      if (completedList.length === 0) {
+        completedContainer.innerHTML = `
+          <div class="text-center text-slate-600 py-6 md:py-10 font-bold text-xs md:text-sm">출문 내역이 없습니다.</div>
+        `;
+      } else {
+        completedContainer.innerHTML = completedList.slice(0, 6).map(item => {
+          const timeStr = new Date(item.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+          const maskedDriver = escapeHtml(maskName(item.driver_name));
+          const carNum = escapeHtml(item.car_number || '-');
+
+          return `
+            <div class="p-3 md:p-3.5 bg-slate-950/40 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs md:text-sm">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <i class="fa-solid fa-circle-check text-emerald-400 shrink-0"></i>
+                <span class="font-black text-slate-200 text-base md:text-lg truncate">${carNum}</span>
+                <span class="text-xs text-slate-400 truncate">(${maskedDriver})</span>
+              </div>
+              <span class="font-mono text-[10px] md:text-xs font-bold text-slate-500 shrink-0 ml-2">${timeStr}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function openExitModal(id, carNumber) {
+      selectedRecordId = id;
+      document.getElementById('modal-car-number').innerText = carNumber;
+      document.getElementById('exit-modal').classList.remove('hidden');
+    }
+
+    function closeExitModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('exit-modal').classList.add('hidden');
+      selectedRecordId = null;
+    }
+
+    async function confirmExit() {
+      if (!selectedRecordId || !_supabase) return;
+
+      const { error } = await _supabase.rpc('mark_exit_complete', {
+        p_id: selectedRecordId
+      });
+
+      if (error) {
+        alert('출문 처리 중 오류가 발생했습니다: ' + error.message);
+        return;
+      }
+
+      closeExitModal();
+      fetchBoardData();
+    }
+  </script>
+</body>
+</html>
